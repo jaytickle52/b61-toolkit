@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: B61 Toolkit
- * Description: Modular site toolkit for Potomac Classical Conservatory. Features (People directory, AI Alt Text, balanced headlines, paragraph orphan control) can be switched on and off individually under B61 Toolkit → Features.
- * Version:     1.3.0
+ * Description: Banner 61's modular site toolkit. Each feature (People directory, AI Alt Text, balanced headlines, paragraph orphan control, and more to come) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
+ * Version:     1.4.0
  * Author:      Banner 61
  * Text Domain: b61-toolkit
  * Requires at least: 6.0
@@ -13,13 +13,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'B61_TOOLKIT_VERSION', '1.3.0' );
+define( 'B61_TOOLKIT_VERSION', '1.4.0' );
 define( 'B61_TOOLKIT_FILE', __FILE__ );
 define( 'B61_TOOLKIT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'B61_TOOLKIT_URL', plugin_dir_url( __FILE__ ) );
 
+/*
+ * GitHub repo that releases are pulled from ("owner/repo"). Either constant can
+ * be overridden in wp-config.php. B61_TOOLKIT_GITHUB_TOKEN is only needed while
+ * the repo is private: use a fine-grained token with read-only Contents access.
+ */
+if ( ! defined( 'B61_TOOLKIT_GITHUB_REPO' ) ) {
+	define( 'B61_TOOLKIT_GITHUB_REPO', '' );
+}
+if ( ! defined( 'B61_TOOLKIT_GITHUB_TOKEN' ) ) {
+	define( 'B61_TOOLKIT_GITHUB_TOKEN', '' );
+}
+
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-github-updater.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-toolkit-module.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-toolkit.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-toolkit-network.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-people.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-alt-text.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-line-breaks.php';
@@ -36,6 +50,18 @@ function b61_toolkit() {
 }
 
 b61_toolkit()->boot();
+
+/**
+ * Updates from GitHub Releases.
+ */
+function b61_toolkit_updater() {
+	static $updater = null;
+	if ( null === $updater ) {
+		$updater = new B61_GitHub_Updater( B61_TOOLKIT_FILE, B61_TOOLKIT_GITHUB_REPO, B61_TOOLKIT_VERSION, B61_TOOLKIT_GITHUB_TOKEN );
+	}
+	return $updater;
+}
+b61_toolkit_updater()->hooks();
 
 /**
  * Activation: register everything once so rewrite rules and seed terms exist,

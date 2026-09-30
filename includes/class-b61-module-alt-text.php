@@ -38,11 +38,55 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 	}
 
 	public function status_note() {
-		$opts = self::options();
-		if ( empty( $opts['api_key'] ) ) {
-			return '<span style="color:#b32d2e;">' . esc_html__( 'No OpenAI API key saved yet — add one under B61 Toolkit → AI Alt Text.', 'b61-toolkit' ) . '</span>';
+		switch ( self::key_source() ) {
+			case 'constant':
+				return esc_html__( 'Using the OpenAI key set in wp-config.php.', 'b61-toolkit' );
+			case 'network':
+				return esc_html__( 'Using the network-wide OpenAI key.', 'b61-toolkit' );
+			case 'site':
+				return esc_html__( 'API key saved for this site.', 'b61-toolkit' );
 		}
-		return esc_html__( 'API key saved.', 'b61-toolkit' );
+		$where = is_multisite()
+			? __( 'No OpenAI API key yet — add one in Network Admin → B61 Toolkit, or for this site under B61 Toolkit → AI Alt Text.', 'b61-toolkit' )
+			: __( 'No OpenAI API key saved yet — add one under B61 Toolkit → AI Alt Text.', 'b61-toolkit' );
+		return '<span style="color:#b32d2e;">' . esc_html( $where ) . '</span>';
+	}
+
+	/**
+	 * Where the OpenAI key comes from, in priority order:
+	 *   constant — B61_OPENAI_API_KEY in wp-config.php (kept out of the database)
+	 *   network  — Network Admin → B61 Toolkit (one key for every site)
+	 *   site     — this site's AI Alt Text settings
+	 *
+	 * @return string constant|network|site|'' (none)
+	 */
+	public static function key_source() {
+		if ( defined( 'B61_OPENAI_API_KEY' ) && '' !== (string) B61_OPENAI_API_KEY ) {
+			return 'constant';
+		}
+		if ( is_multisite() && class_exists( 'B61_Toolkit_Network' ) ) {
+			$net = B61_Toolkit_Network::settings();
+			if ( '' !== $net['openai_api_key'] ) {
+				return 'network';
+			}
+		}
+		$opts = self::options();
+		return '' !== (string) $opts['api_key'] ? 'site' : '';
+	}
+
+	/** The OpenAI key to use, resolved per key_source(). Never output this. */
+	private static function api_key() {
+		switch ( self::key_source() ) {
+			case 'constant':
+				return (string) B61_OPENAI_API_KEY;
+			case 'network':
+				$net = B61_Toolkit_Network::settings();
+				return $net['openai_api_key'];
+			case 'site':
+				$opts = self::options();
+				return (string) $opts['api_key'];
+		}
+		return '';
 	}
 
 	public function init() {
@@ -124,8 +168,18 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 	}
 
 	public function sanitize_options( $input ) {
+		// The saved key is never echoed into the form, so a blank field means
+		// "keep what is saved"; the Remove checkbox clears it.
+		$current = self::options();
+		$api_key = (string) $current['api_key'];
+		if ( ! empty( $input['clear_api_key'] ) ) {
+			$api_key = '';
+		} elseif ( isset( $input['api_key'] ) && '' !== trim( $input['api_key'] ) ) {
+			$api_key = trim( sanitize_text_field( $input['api_key'] ) );
+		}
+
 		return array(
-			'api_key'             => isset( $input['api_key'] ) ? trim( sanitize_text_field( $input['api_key'] ) ) : '',
+			'api_key'             => $api_key,
 			'auto_on_upload'      => empty( $input['auto_on_upload'] ) ? '0' : '1',
 			'overwrite_existing'  => empty( $input['overwrite_existing'] ) ? '0' : '1',
 			'generate_for_weak'   => empty( $input['generate_for_weak'] ) ? '0' : '1',
@@ -155,7 +209,17 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 			<form method="post" action="options.php">
 				<?php settings_fields( 'banner_ai_alt_text_settings' ); ?>
 				<table class="form-table" role="presentation">
-					<tr><th scope="row">OpenAI API Key</th><td><input type="password" name="<?php echo $key; ?>[api_key]" value="<?php echo esc_attr( $opts['api_key'] ); ?>" class="regular-text" autocomplete="off" /></td></tr>
+					<tr><th scope="row">OpenAI API Key</th><td>
+						<?php $source = self::key_source(); ?>
+						<?php if ( 'constant' === $source || 'network' === $source ) : ?>
+							<p><?php echo esc_html( 'constant' === $source ? __( 'Set in wp-config.php for this install.', 'b61-toolkit' ) : __( 'Using the network-wide key, managed by Banner 61.', 'b61-toolkit' ) ); ?></p>
+						<?php else : ?>
+							<input type="password" name="<?php echo $key; ?>[api_key]" value="" class="regular-text" autocomplete="new-password" placeholder="<?php echo esc_attr( 'site' === $source ? __( 'Saved — leave blank to keep', 'b61-toolkit' ) : '' ); ?>" />
+							<?php if ( 'site' === $source ) : ?>
+								<label style="margin-left:1em;"><input type="checkbox" name="<?php echo $key; ?>[clear_api_key]" value="1" /> <?php esc_html_e( 'Remove saved key', 'b61-toolkit' ); ?></label>
+							<?php endif; ?>
+						<?php endif; ?>
+					</td></tr>
 					<tr><th scope="row">Model</th><td><code><?php echo esc_html( self::MODEL ); ?></code><p class="description">Vision model used for generation. Managed by Banner 61.</p></td></tr>
 					<tr><th scope="row">Auto-generate on upload</th><td><label><input type="checkbox" name="<?php echo $key; ?>[auto_on_upload]" value="1" <?php checked( $opts['auto_on_upload'], '1' ); ?> /> Generate alt text automatically when new images are uploaded.</label></td></tr>
 					<tr><th scope="row">Overwrite existing alt text</th><td><label><input type="checkbox" name="<?php echo $key; ?>[overwrite_existing]" value="1" <?php checked( $opts['overwrite_existing'], '1' ); ?> /> Replace existing alt text. Leave unchecked for safer operation.</label></td></tr>
@@ -311,8 +375,9 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 	}
 
 	private function call_openai( $attachment_id ) {
-		$opts = self::options();
-		if ( empty( $opts['api_key'] ) ) {
+		$opts    = self::options();
+		$api_key = self::api_key();
+		if ( '' === $api_key ) {
 			return new WP_Error( 'missing_api_key', 'OpenAI API key is missing.' );
 		}
 		$image_ref = $this->get_image_reference( $attachment_id, $opts['image_size'] );
@@ -347,7 +412,7 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 			array(
 				'timeout' => 45,
 				'headers' => array(
-					'Authorization' => 'Bearer ' . $opts['api_key'],
+					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
 				),
 				'body'    => wp_json_encode( $payload ),

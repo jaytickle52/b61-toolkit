@@ -25,6 +25,21 @@ class B61_Toolkit {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ), 5 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( B61_TOOLKIT_FILE ), array( $this, 'action_links' ) );
+		add_filter( 'option_page_capability_b61_toolkit_modules_group', array( $this, 'capability' ) );
+
+		if ( is_multisite() ) {
+			( new B61_Toolkit_Network( $this ) )->hooks();
+		}
+	}
+
+	/**
+	 * Who may switch features on and off. On a network that is super admins
+	 * only — school staff are site admins and should not be able to turn
+	 * Banner 61 features off. Single sites keep manage_options.
+	 */
+	public function capability() {
+		$cap = is_multisite() ? 'manage_network_options' : 'manage_options';
+		return apply_filters( 'b61_toolkit_capability', $cap );
 	}
 
 	private function register_modules() {
@@ -63,10 +78,16 @@ class B61_Toolkit {
 		return $this->modules;
 	}
 
+	/**
+	 * Feature defaults for a site with nothing saved yet. On multisite every
+	 * feature starts off, so network-activating the plugin changes nothing on
+	 * any site until a feature is switched on there.
+	 */
 	public function defaults() {
 		$defaults = array();
 		foreach ( $this->modules as $id => $module ) {
-			$defaults[ $id ] = $module->enabled_by_default() ? '1' : '0';
+			$on = $module->enabled_by_default() && ! is_multisite();
+			$defaults[ $id ] = apply_filters( 'b61_toolkit_module_default', $on, $id ) ? '1' : '0';
 		}
 		return $defaults;
 	}
@@ -99,7 +120,7 @@ class B61_Toolkit {
 		add_menu_page(
 			__( 'B61 Toolkit', 'b61-toolkit' ),
 			__( 'B61 Toolkit', 'b61-toolkit' ),
-			'manage_options',
+			$this->capability(),
 			self::MENU_SLUG,
 			array( $this, 'render_features_page' ),
 			'dashicons-screenoptions',
@@ -110,7 +131,7 @@ class B61_Toolkit {
 			self::MENU_SLUG,
 			__( 'Features', 'b61-toolkit' ),
 			__( 'Features', 'b61-toolkit' ),
-			'manage_options',
+			$this->capability(),
 			self::MENU_SLUG,
 			array( $this, 'render_features_page' )
 		);
@@ -164,7 +185,7 @@ class B61_Toolkit {
 	}
 
 	public function render_features_page() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( $this->capability() ) ) {
 			return;
 		}
 
@@ -215,6 +236,19 @@ class B61_Toolkit {
 				</table>
 				<?php submit_button( __( 'Save Features', 'b61-toolkit' ) ); ?>
 			</form>
+
+			<p class="description">
+				<?php
+				$updater = function_exists( 'b61_toolkit_updater' ) ? b61_toolkit_updater() : null;
+				if ( $updater && $updater->is_configured() ) {
+					/* translators: 1: version, 2: GitHub repo */
+					printf( esc_html__( 'Version %1$s · updates from GitHub (%2$s)', 'b61-toolkit' ), esc_html( B61_TOOLKIT_VERSION ), esc_html( $updater->repo() ) );
+				} else {
+					/* translators: %s: version */
+					printf( esc_html__( 'Version %s · GitHub updates are not connected (set B61_TOOLKIT_GITHUB_REPO).', 'b61-toolkit' ), esc_html( B61_TOOLKIT_VERSION ) );
+				}
+				?>
+			</p>
 		</div>
 		<?php
 	}
