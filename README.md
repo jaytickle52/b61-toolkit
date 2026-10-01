@@ -17,6 +17,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Email Protection | ASE email obfuscation |
 | Password Pages | "Password-Protected Page" snippet, Password Protected Page Design |
 | Calendar | ICS Calendar (`[b61_calendar]`, also answers `[ics_calendar]`) |
+| School Details | network "Options Page & Fields" snippet / ACF Global Info (`[b61_school field="…"]`) |
 | AI Alt Text | Alt Magic |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
 

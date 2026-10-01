@@ -23,6 +23,7 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_toolkit_content_order' );
 	delete_option( 'b61_toolkit_login_page' );
 	delete_option( 'b61_toolkit_password_page' );
+	// School Details are site content (contact info, policies) and are kept.
 	delete_transient( 'b61_toolkit_flush_rewrites' );
 
 	delete_post_meta_by_key( '_banner_ai_alt_text_generated_at' );

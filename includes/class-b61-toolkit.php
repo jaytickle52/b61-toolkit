@@ -55,6 +55,7 @@ class B61_Toolkit {
 			new B61_Module_Email_Protection(),
 			new B61_Module_Password_Page(),
 			new B61_Module_Calendar(),
+			new B61_Module_School_Details(),
 			new B61_Module_Alt_Text(),
 			new B61_Module_Balanced_Headlines(),
 			new B61_Module_Paragraph_Orphans(),
