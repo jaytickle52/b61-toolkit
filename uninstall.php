@@ -25,6 +25,12 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_toolkit_password_page' );
 	delete_option( 'b61_toolkit_announcement' );
 	delete_option( 'b61_toolkit_media_folders' );
+	delete_option( 'b61_toolkit_seo' );
+	delete_option( 'b61_seo_404_log' );
+	delete_option( 'b61_seo_redirect_hits' );
+	delete_transient( 'b61_llms_txt' );
+	// Redirects (b61_seo_redirects) and per-page SEO fields are kept: removing
+	// them would break old links and lose written descriptions.
 	// Media folders (terms) stay, like other content.
 	// School Details are site content (contact info, policies) and are kept.
 	delete_transient( 'b61_toolkit_flush_rewrites' );

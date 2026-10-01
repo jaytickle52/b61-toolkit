@@ -77,7 +77,7 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 	}
 
 	/** The OpenAI key to use, resolved per key_source(). Never output this. */
-	private static function api_key() {
+	public static function api_key() {
 		switch ( self::key_source() ) {
 			case 'constant':
 				return (string) B61_OPENAI_API_KEY;

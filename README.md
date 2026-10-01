@@ -20,8 +20,20 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Organization Details | network "Options Page & Fields" snippet / ACF Global Info (`[b61_details field="…"]`; `[b61_school]` still works) |
 | Announcement Bar | Bulletin Announcements (one scheduled notice bar, closable, no endpoints) |
 | Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
+| SEO | Rank Math / Yoast (titles, descriptions, noindex, canonical, sharing tags, sitemap, schema from Org Details/Events/People, redirects + 404 log, llms.txt, import from both) |
 | AI Alt Text | Alt Magic |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
+
+## SEO
+
+Switch on **SEO** in Features. Every content type with public pages gets a **Search & sharing** box (title, description, sharing image, "hide from search engines", canonical) with a Google-style preview; **Suggest a description** appears when an OpenAI key is set under AI Alt Text.
+
+- **SEO** screen: home page title/description, separator, organization type, default sharing image, Google/Bing verification, which archives search engines skip, title patterns per content type. **Import** tab copies Rank Math or Yoast data (pages, settings, redirects) without touching the original.
+- **Redirects**: 301/302/307/410, exact or regular-expression rules, plus a 404 log with one-click "Redirect…".
+- **SEO Report**: a short list of things to fix (site blocked from search, hidden pages, missing descriptions, long or duplicate titles, redirect chains, missing org details).
+- Structured data comes from Org Details (name, logo, phone, address, social links), Events (dates, times, location), People (name, job title — never email or phone) and breadcrumbs.
+- WordPress's own sitemap (`/wp-sitemap.xml`) is used, minus hidden pages and types without public pages; `/llms.txt` summarises the site for AI search tools.
+- While Rank Math, Yoast, AIOSEO, SEOPress, The SEO Framework, Slim SEO or Squirrly is active, the module prints nothing in the page head — import first, check the report, then deactivate the old plugin.
 
 ## Editing screens
 
