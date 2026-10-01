@@ -45,6 +45,8 @@ class B61_Toolkit {
 	private function register_modules() {
 		$modules = array(
 			new B61_Module_People(),
+			new B61_Module_Testimonials(),
+			new B61_Module_Events(),
 			new B61_Module_Alt_Text(),
 			new B61_Module_Balanced_Headlines(),
 			new B61_Module_Paragraph_Orphans(),
