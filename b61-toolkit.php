@@ -49,6 +49,7 @@ require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-calendar.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-school-details.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-alt-text.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-line-breaks.php';
+require_once B61_TOOLKIT_DIR . 'includes/integrations/class-b61-breakdance-integration.php';
 
 /**
  * Main instance.
@@ -62,6 +63,7 @@ function b61_toolkit() {
 }
 
 b61_toolkit()->boot();
+B61_Breakdance_Integration::boot();
 
 /**
  * Updates from GitHub Releases.

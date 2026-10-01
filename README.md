@@ -21,6 +21,17 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | AI Alt Text | Alt Magic |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
 
+## Breakdance
+
+When Breakdance (Free or Pro) is active, the Toolkit adds its content to Breakdance's dynamic data picker. Nothing to switch on. Fields appear only for modules that are on:
+
+- **People**: title, credentials, email, phone, bio, groups, LinkedIn, plus ready-made `mailto:` and `tel:` links
+- **Events**: when, time, location, link text, link URL, and start date in any format (e.g. `M` / `j` for date badges)
+- **Testimonials**: quote, role
+- **Organization**: every Organization Details field, plus `tel:` and `mailto:` links
+
+People, Events and Testimonials are normal post types, so Breakdance Post Loops can list them, and hand order from Content Order applies in the builder preview as well as on the live site. Developers can add or change fields with the `b61_breakdance_fields` filter.
+
 ## White-label
 
 Banner 61's names are the defaults. On a partner install, set any of these in `wp-config.php` and the admin menu, screens, Plugins list and update details show them instead:

@@ -283,7 +283,8 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 			return;
 		}
 		$orderby = $query->get( 'orderby' );
-		if ( is_admin() ) {
+		// Builder previews (Breakdance etc.) load loops over admin-ajax; treat them as front end.
+		if ( is_admin() && ! wp_doing_ajax() ) {
 			// List screens: hand order unless a column sort was clicked.
 			if ( $query->is_main_query() && ! $orderby ) {
 				$query->set( 'orderby', array( 'menu_order' => 'ASC', 'title' => 'ASC' ) );
