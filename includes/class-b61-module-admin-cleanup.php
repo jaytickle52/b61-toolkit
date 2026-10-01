@@ -100,6 +100,10 @@ class B61_Module_Admin_Cleanup extends B61_Toolkit_Module {
 	/* Boot                                                                */
 	/* ------------------------------------------------------------------ */
 
+	public function settings_options() {
+		return array( self::OPTION => array( 'sanitize' => array( $this, 'sanitize' ) ) );
+	}
+
 	public function init() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'option_page_capability_' . self::OPTION . '_group', array( $this, 'settings_capability' ) );

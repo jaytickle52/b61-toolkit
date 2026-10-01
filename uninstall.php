@@ -23,6 +23,9 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_toolkit_content_order' );
 	delete_option( 'b61_toolkit_login_page' );
 	delete_option( 'b61_toolkit_password_page' );
+	delete_option( 'b61_toolkit_announcement' );
+	delete_option( 'b61_toolkit_media_folders' );
+	// Media folders (terms) stay, like other content.
 	// School Details are site content (contact info, policies) and are kept.
 	delete_transient( 'b61_toolkit_flush_rewrites' );
 

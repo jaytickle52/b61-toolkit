@@ -93,6 +93,7 @@ class B61_Module_People extends B61_Toolkit_Module {
 		add_action( 'init', array( $this, 'register_taxonomy' ), 9 );
 		add_action( 'init', array( $this, 'register_meta' ), 10 );
 
+		add_filter( 'rest_prepare_' . self::POST_TYPE, array( $this, 'rest_hide_contact' ), 10, 2 );
 		add_filter( 'enter_title_here', array( $this, 'title_placeholder' ), 10, 2 );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'add_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_meta' ), 10, 2 );
@@ -235,6 +236,23 @@ class B61_Module_People extends B61_Toolkit_Module {
 	}
 
 	/**
+	 * Email and phone are shown only where a template prints them (and Email
+	 * Protection can guard them there). The public REST API would otherwise
+	 * list every address in one request, so it shows them to editors only.
+	 */
+	public function rest_hide_contact( $response, $post ) {
+		if ( current_user_can( 'edit_post', $post->ID ) ) {
+			return $response;
+		}
+		$data = $response->get_data();
+		if ( isset( $data['meta'] ) && is_array( $data['meta'] ) ) {
+			unset( $data['meta']['b61_person_email'], $data['meta']['b61_person_phone'] );
+			$response->set_data( $data );
+		}
+		return $response;
+	}
+
+	/**
 	 * "Add name" instead of "Add title" on the person editor.
 	 */
 	public function title_placeholder( $text, $post ) {
@@ -315,7 +333,7 @@ class B61_Module_People extends B61_Toolkit_Module {
 			if ( ! isset( $_POST[ $key ] ) ) {
 				continue;
 			}
-			$raw = wp_unslash( $_POST[ $key ] );
+			$raw = wp_unslash( $_POST[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing -- nonce checked above; sanitized per field type below.
 			if ( 'richtext' === $field['type'] ) {
 				$value = wp_kses_post( $raw );
 			} else {

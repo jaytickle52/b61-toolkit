@@ -103,6 +103,10 @@ class B61_Toolkit {
 		add_filter( 'plugin_action_links_' . plugin_basename( B61_TOOLKIT_FILE ), array( $this, 'action_links' ) );
 		add_filter( 'option_page_capability_b61_toolkit_modules_group', array( $this, 'capability' ) );
 
+		if ( is_admin() ) {
+			( new B61_Toolkit_Transfer( $this ) )->hooks();
+		}
+
 		if ( is_multisite() ) {
 			( new B61_Toolkit_Network( $this ) )->hooks();
 		}
@@ -132,6 +136,8 @@ class B61_Toolkit {
 			new B61_Module_Password_Page(),
 			new B61_Module_Calendar(),
 			new B61_Module_School_Details(),
+			new B61_Module_Announcement_Bar(),
+			new B61_Module_Media_Folders(),
 			new B61_Module_Alt_Text(),
 			new B61_Module_Balanced_Headlines(),
 			new B61_Module_Paragraph_Orphans(),

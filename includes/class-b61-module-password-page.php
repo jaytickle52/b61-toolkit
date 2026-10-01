@@ -59,6 +59,10 @@ class B61_Module_Password_Page extends B61_Toolkit_Module {
 		return $s;
 	}
 
+	public function settings_options() {
+		return array( self::OPTION => array( 'sanitize' => array( $this, 'sanitize' ) ) );
+	}
+
 	public function init() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'option_page_capability_' . self::OPTION . '_group', array( $this, 'settings_capability' ) );

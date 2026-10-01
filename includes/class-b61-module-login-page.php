@@ -47,6 +47,10 @@ class B61_Module_Login_Page extends B61_Toolkit_Module {
 		return wp_parse_args( (array) get_option( self::OPTION, array() ), self::defaults() );
 	}
 
+	public function settings_options() {
+		return array( self::OPTION => array( 'sanitize' => array( $this, 'sanitize' ), 'media' => array( 'logo_id' ) ) );
+	}
+
 	public function init() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'option_page_capability_' . self::OPTION . '_group', array( $this, 'settings_capability' ) );

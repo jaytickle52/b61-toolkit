@@ -246,7 +246,7 @@ class B61_Module_Testimonials extends B61_Toolkit_Module {
 			if ( ! isset( $_POST[ $key ] ) ) {
 				continue;
 			}
-			$value = call_user_func( $field['sanitize'], wp_unslash( $_POST[ $key ] ) );
+			$value = call_user_func( $field['sanitize'], wp_unslash( $_POST[ $key ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing -- nonce checked above; sanitized by the field's callback.
 			if ( '' === trim( wp_strip_all_tags( $value ) ) ) {
 				delete_post_meta( $post_id, $key );
 			} else {

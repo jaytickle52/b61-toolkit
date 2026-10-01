@@ -55,7 +55,7 @@ class B61_Toolkit_Network {
 		check_admin_referer( self::ACTION );
 
 		$settings = self::settings();
-		$input    = isset( $_POST[ self::OPTION ] ) && is_array( $_POST[ self::OPTION ] ) ? wp_unslash( $_POST[ self::OPTION ] ) : array();
+		$input    = isset( $_POST[ self::OPTION ] ) && is_array( $_POST[ self::OPTION ] ) ? wp_unslash( $_POST[ self::OPTION ] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each key sanitized below.
 
 		if ( ! empty( $input['clear_openai_api_key'] ) ) {
 			$settings['openai_api_key'] = '';
@@ -81,7 +81,7 @@ class B61_Toolkit_Network {
 		<div class="wrap">
 			<h1><?php /* translators: %s: plugin name */ echo esc_html( sprintf( __( '%s — Network', 'b61-toolkit' ), B61_Toolkit::brand( 'name' ) ) ); ?></h1>
 
-			<?php if ( isset( $_GET['updated'] ) ) : ?>
+			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only. ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Network settings saved.', 'b61-toolkit' ); ?></p></div>
 			<?php endif; ?>
 

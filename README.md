@@ -18,8 +18,14 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Password Pages | "Password-Protected Page" snippet, Password Protected Page Design |
 | Calendar | ICS Calendar (`[b61_calendar]`, also answers `[ics_calendar]`) |
 | Organization Details | network "Options Page & Fields" snippet / ACF Global Info (`[b61_details field="…"]`; `[b61_school]` still works) |
+| Announcement Bar | Bulletin Announcements (one scheduled notice bar, closable, no endpoints) |
+| Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
 | AI Alt Text | Alt Magic |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
+
+## Copying settings between sites
+
+**B61 Toolkit → Import / Export** downloads which features are on, plus each feature's settings, as a JSON file. Importing shows what the file holds and lets you tick what to apply before anything changes. API keys are never exported. Image choices (such as the login logo) are only imported onto the site they came from. Content such as people, events and testimonials is not included; use Tools → Export for that.
 
 ## Breakdance
 
@@ -57,3 +63,7 @@ Internal names (post types like `b61_person`, option keys, shortcodes, the `b61-
 ## Third-party code
 
 `vendor/ics-parser/` — ics-parser 3.6.0 (MIT), namespaced and patched; see its README.txt.
+
+## Quality checks
+
+Each release is run through WordPress's Plugin Check. The only remaining notices are rules for plugins listed on WordPress.org: a self-updater, a `readme.txt`, and calling OpenAI directly. They don't apply to a privately distributed plugin.

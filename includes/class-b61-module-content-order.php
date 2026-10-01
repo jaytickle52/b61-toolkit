@@ -80,6 +80,20 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 		return array_values( array_filter( $types, 'post_type_exists' ) );
 	}
 
+	public function settings_options() {
+		return array( self::OPTION => array( 'sanitize' => array( $this, 'sanitize_import' ) ) );
+	}
+
+	/**
+	 * Imported lists may name post types that are not registered yet (their
+	 * module is being switched on in the same import). types() ignores
+	 * unknown ones at run time, so only the format is checked here.
+	 */
+	public function sanitize_import( $input ) {
+		$types = isset( $input['types'] ) ? array_filter( array_map( 'sanitize_key', (array) $input['types'] ) ) : array();
+		return array( 'types' => array_values( array_unique( $types ) ) );
+	}
+
 	public function init() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'option_page_capability_' . self::OPTION . '_group', array( $this, 'settings_capability' ) );
@@ -150,7 +164,7 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 	}
 
 	public function render_order_screen() {
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- which screen to show; read-only.
 		$type = substr( $page, strlen( 'b61-order-' ) );
 		if ( ! in_array( $type, self::types(), true ) || ! current_user_can( self::edit_cap( $type ) ) ) {
 			return;
@@ -162,7 +176,7 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 				'post_status'      => array( 'publish', 'draft', 'pending', 'private', 'future' ),
 				'posts_per_page'   => self::MAX_ITEMS,
 				'orderby'          => array( 'menu_order' => 'ASC', 'title' => 'ASC' ),
-				'suppress_filters' => true,
+				'suppress_filters' => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters -- the hand order itself, unaltered by other plugins' query filters.
 			)
 		);
 		wp_enqueue_script( 'jquery-ui-sortable' );
@@ -174,7 +188,7 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 				echo esc_html( sprintf( __( 'Order %s', 'b61-toolkit' ), $obj->labels->name ) );
 				?>
 			</h1>
-			<?php if ( isset( $_GET['saved'] ) ) : ?>
+			<?php if ( isset( $_GET['saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only. ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Order saved.', 'b61-toolkit' ); ?></p></div>
 			<?php endif; ?>
 			<p><?php esc_html_e( 'Drag items into place, or use the arrow buttons, then save.', 'b61-toolkit' ); ?></p>
@@ -263,7 +277,7 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 			}
 			// A direct update avoids firing every save_post hook (and revisions)
 			// for what is only a position change.
-			$wpdb->update( $wpdb->posts, array( 'menu_order' => $position ), array( 'ID' => $id ) );
+			$wpdb->update( $wpdb->posts, array( 'menu_order' => $position ), array( 'ID' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- cache cleared on the next line.
 			clean_post_cache( $id );
 		}
 		do_action( 'b61_content_order_saved', $type, $ids );
@@ -319,7 +333,7 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 				'orderby'          => 'menu_order',
 				'order'            => 'DESC',
 				'fields'           => 'ids',
-				'suppress_filters' => true,
+				'suppress_filters' => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters -- the hand order itself, unaltered by other plugins' query filters.
 			)
 		);
 		$data['menu_order'] = $last ? (int) get_post_field( 'menu_order', $last[0] ) + 1 : 1;

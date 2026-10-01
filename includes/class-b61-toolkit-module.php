@@ -35,6 +35,19 @@ abstract class B61_Toolkit_Module {
 	 */
 	public function register_admin_page() {}
 
+	/**
+	 * Options this module stores, for Settings export/import.
+	 *
+	 * @return array option name => array(
+	 *     'sanitize' => callable applied to imported values,
+	 *     'private'  => keys never exported (API keys),
+	 *     'media'    => keys holding attachment IDs, dropped when importing on a different site,
+	 * )
+	 */
+	public function settings_options() {
+		return array();
+	}
+
 	/** Extra note rendered under the toggle on the Features screen. Optional. */
 	public function status_note() {
 		return '';

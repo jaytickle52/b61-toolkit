@@ -86,7 +86,7 @@ class B61_Module_Calendar extends B61_Toolkit_Module {
 	 *
 	 * @return array|WP_Error
 	 */
-	public static function events( $url ) {
+	public static function events( $url, $allow_fetch = true ) {
 		$url = self::normalize_url( $url );
 		if ( '' === $url ) {
 			return new WP_Error( 'b61_cal_url', __( 'The calendar address is not valid.', 'b61-toolkit' ) );
@@ -96,6 +96,11 @@ class B61_Module_Calendar extends B61_Toolkit_Module {
 		$cached = get_transient( $key );
 		if ( is_array( $cached ) ) {
 			return $cached;
+		}
+		// A feed that just failed is not fetched and parsed again on every view.
+		if ( ! $allow_fetch || get_transient( $key . '_fail' ) ) {
+			$stale = get_transient( $key . '_stale' );
+			return is_array( $stale ) ? $stale : new WP_Error( 'b61_cal_fetch', __( 'The calendar could not be loaded right now.', 'b61-toolkit' ) );
 		}
 
 		$response = wp_safe_remote_get(
@@ -127,6 +132,7 @@ class B61_Module_Calendar extends B61_Toolkit_Module {
 			set_transient( $key, $stale, 10 * MINUTE_IN_SECONDS );
 			return $stale;
 		}
+		set_transient( $key . '_fail', 1, 10 * MINUTE_IN_SECONDS );
 		return new WP_Error( 'b61_cal_fetch', __( 'The calendar could not be loaded right now.', 'b61-toolkit' ) );
 	}
 
@@ -238,7 +244,9 @@ class B61_Module_Calendar extends B61_Toolkit_Module {
 
 		wp_enqueue_style( 'b61-calendar' );
 
-		$events = self::events( $atts['url'] );
+		// Contributors and Authors previewing a draft can't make the server fetch
+		// a new feed; feeds already published on the site still show from cache.
+		$events = self::events( $atts['url'], ! ( is_preview() && ! current_user_can( 'edit_others_posts' ) ) );
 		$view   = in_array( $atts['view'], array( 'list', 'month' ), true ) ? $atts['view'] : 'month';
 
 		$html = '<div class="b61-cal b61-cal--' . esc_attr( $view ) . '">';

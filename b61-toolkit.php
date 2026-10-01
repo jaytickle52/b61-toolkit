@@ -1,8 +1,10 @@
 <?php
 /**
  * Plugin Name: B61 Toolkit
- * Description: Modular site toolkit. Each feature (People, Testimonials, Events, content ordering, duplication, media replacement, admin cleanup, login page, email protection, password pages, calendar feeds, organization details, AI alt text and more) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
- * Version:     1.9.0
+ * Description: Modular site toolkit. Each feature (People, Testimonials, Events, content ordering, duplication, media replacement, admin cleanup, login page, email protection, password pages, calendar feeds, organization details, announcement bar, media folders, AI alt text and more) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
+ * License:     GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Version:     1.10.0
  * Author:      Banner 61
  * Text Domain: b61-toolkit
  * Requires at least: 6.0
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'B61_TOOLKIT_VERSION', '1.9.0' );
+define( 'B61_TOOLKIT_VERSION', '1.10.0' );
 define( 'B61_TOOLKIT_FILE', __FILE__ );
 define( 'B61_TOOLKIT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'B61_TOOLKIT_URL', plugin_dir_url( __FILE__ ) );
@@ -49,6 +51,9 @@ require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-calendar.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-school-details.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-alt-text.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-line-breaks.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-announcement-bar.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-media-folders.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-toolkit-transfer.php';
 require_once B61_TOOLKIT_DIR . 'includes/integrations/class-b61-breakdance-integration.php';
 
 /**

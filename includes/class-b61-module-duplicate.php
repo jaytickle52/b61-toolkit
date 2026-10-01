@@ -103,8 +103,8 @@ class B61_Module_Duplicate extends B61_Toolkit_Module {
 		$post = null;
 		if ( is_admin() ) {
 			$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-			if ( $screen && 'post' === $screen->base && isset( $_GET['post'] ) ) {
-				$post = get_post( absint( $_GET['post'] ) );
+			if ( $screen && 'post' === $screen->base && isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- toolbar link only.
+				$post = get_post( absint( $_GET['post'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			}
 		} elseif ( is_singular() ) {
 			$post = get_queried_object();
@@ -197,7 +197,7 @@ class B61_Module_Duplicate extends B61_Toolkit_Module {
 	}
 
 	public function notice() {
-		if ( empty( $_GET['b61_duplicated'] ) ) {
+		if ( empty( $_GET['b61_duplicated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only.
 			return;
 		}
 		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Duplicated. You are editing the copy — it is a draft until you publish it.', 'b61-toolkit' ) . '</p></div>';

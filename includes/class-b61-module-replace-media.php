@@ -159,12 +159,12 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 			}
 		}
 
-		if ( ! @rename( $upload['file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! @rename( $upload['file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.rename_rename -- same-directory move inside uploads, as core's own upload handling does.
 			wp_delete_file( $upload['file'] );
 			return new WP_Error( 'b61_replace_move', __( 'The new file could not be saved in place of the old one.', 'b61-toolkit' ) );
 		}
 		$perms = fileperms( dirname( $target ) ) & 0000666;
-		@chmod( $target, $perms ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		@chmod( $target, $perms ); // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- same permissions core gives uploads.
 
 		update_attached_file( $attachment_id, $target );
 		$new_meta = wp_generate_attachment_metadata( $attachment_id, $target );

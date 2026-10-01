@@ -320,7 +320,7 @@ class B61_Module_Events extends B61_Toolkit_Module {
 		}
 		foreach ( self::fields() as $key => $field ) {
 			// Unchecked checkboxes are not posted; everything else is.
-			$raw   = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '';
+			$raw   = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing -- nonce checked above; sanitize_meta() next line.
 			$value = sanitize_meta( $key, $raw, 'post', self::POST_TYPE );
 			if ( '' === $value ) {
 				delete_post_meta( $post_id, $key );
@@ -382,7 +382,7 @@ class B61_Module_Events extends B61_Toolkit_Module {
 		$scope      = $query->get( 'b61_event_scope' );
 
 		if ( $admin_list ) {
-			$scope = isset( $_GET['b61_event_scope'] ) ? sanitize_key( wp_unslash( $_GET['b61_event_scope'] ) ) : 'all';
+			$scope = isset( $_GET['b61_event_scope'] ) ? sanitize_key( wp_unslash( $_GET['b61_event_scope'] ) ) : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- list filter; read-only.
 		} elseif ( ! $scope ) {
 			// A single event's own page must load whether or not it is over.
 			if ( $query->is_singular() || $query->get( 'p' ) || $query->get( 'name' ) || $query->get( 'post__in' ) ) {
@@ -424,7 +424,7 @@ class B61_Module_Events extends B61_Toolkit_Module {
 		if ( $admin_list ) {
 			if ( ! $orderby || 'b61_event_start' === $orderby ) {
 				$query->set( 'orderby', 'b61_start' );
-				if ( ! $query->get( 'order' ) || ! isset( $_GET['order'] ) ) {
+				if ( ! $query->get( 'order' ) || ! isset( $_GET['order'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- column sort; read-only.
 					$query->set( 'order', 'upcoming' === $scope ? 'ASC' : 'DESC' );
 				}
 			}
@@ -478,7 +478,7 @@ class B61_Module_Events extends B61_Toolkit_Module {
 
 	public function admin_views( $views ) {
 		$base    = admin_url( 'edit.php?post_type=' . self::POST_TYPE );
-		$current = isset( $_GET['b61_event_scope'] ) ? sanitize_key( wp_unslash( $_GET['b61_event_scope'] ) ) : '';
+		$current = isset( $_GET['b61_event_scope'] ) ? sanitize_key( wp_unslash( $_GET['b61_event_scope'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- list filter; read-only.
 		foreach ( array( 'upcoming' => __( 'Upcoming', 'b61-toolkit' ), 'past' => __( 'Past', 'b61-toolkit' ) ) as $scope => $label ) {
 			$views[ 'b61_' . $scope ] = sprintf(
 				'<a href="%1$s"%2$s>%3$s</a>',

@@ -97,6 +97,10 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 		return 'tel:' . ( 0 === strpos( $phone, '+' ) ? '+' : '' ) . $digits;
 	}
 
+	public function settings_options() {
+		return array( self::OPTION => array( 'sanitize' => array( $this, 'sanitize' ) ) );
+	}
+
 	public function init() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_init', array( $this, 'maybe_import_global_info' ) );
