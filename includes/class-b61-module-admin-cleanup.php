@@ -34,7 +34,8 @@ class B61_Module_Admin_Cleanup extends B61_Toolkit_Module {
 	}
 
 	public function description() {
-		return __( 'Tidies the dashboard and admin bar, gathers admin notices into one panel, turns off comments and RSS feeds, and opens external links in a new tab. Each item has its own checkbox under B61 Toolkit → Admin Cleanup.', 'b61-toolkit' );
+		/* translators: %s: plugin menu name */
+		return sprintf( __( 'Tidies the dashboard and admin bar, gathers admin notices into one panel, turns off comments and RSS feeds, and opens external links in a new tab. Each item has its own checkbox under %s → Admin Cleanup.', 'b61-toolkit' ), B61_Toolkit::brand( 'menu' ) );
 	}
 
 	public function enabled_by_default() {

@@ -43,7 +43,8 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 	public function status_note() {
 		$types = self::types();
 		if ( ! $types ) {
-			return esc_html__( 'No content types chosen yet — pick them under B61 Toolkit → Content Order.', 'b61-toolkit' );
+			/* translators: %s: plugin menu name */
+			return esc_html( sprintf( __( 'No content types chosen yet — pick them under %s → Content Order.', 'b61-toolkit' ), B61_Toolkit::brand( 'menu' ) ) );
 		}
 		$labels = array();
 		foreach ( $types as $t ) {

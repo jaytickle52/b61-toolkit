@@ -1,20 +1,21 @@
 <?php
 /**
- * School Details module: one place for the facts every school site repeats —
- * contact details, address, social links and required policies.
+ * Organization Details module (internal id: school_details): one place for the
+ * facts every site repeats — contact details, address, hours, social links and
+ * required policies. Not school-specific; the id predates the rename.
  *
  * Replaces the network "Options Page & Fields" snippet (ACF "Global Info").
  * On first use it copies anything already saved in Global Info, so an
  * Elementor site can switch without retyping.
  *
  * Output anywhere — builders, footers, widgets:
- *   [b61_school field="phone"]               (555) 123-4567 as a tel: link
- *   [b61_school field="email"]               mailto: link
- *   [b61_school field="address"]             with line breaks
- *   [b61_school field="address" link="map"]  wrapped in the map link
- *   [b61_school field="policy_admissions"]   formatted paragraphs
- *   [b61_school field="phone" link="0"]      plain text, no link
- * PHP: b61_school( 'phone' ) returns the raw value.
+ *   [b61_details field="phone"]               (555) 123-4567 as a tel: link
+ *   [b61_details field="email"]               mailto: link
+ *   [b61_details field="address"]             with line breaks
+ *   [b61_details field="address" link="map"]  wrapped in the map link
+ *   [b61_details field="policy_admissions"]   formatted paragraphs
+ *   [b61_details field="phone" link="0"]      plain text, no link
+ * [b61_school …] is kept as an alias. PHP: b61_details( 'phone' ).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -31,11 +32,11 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 	}
 
 	public function label() {
-		return __( 'School Details', 'b61-toolkit' );
+		return __( 'Organization Details', 'b61-toolkit' );
 	}
 
 	public function description() {
-		return __( 'One place for the school\'s phone, email, address, map link, social links and non-discrimination policies, shown anywhere with [b61_school field="…"]. Imports an existing ACF "Global Info" page.', 'b61-toolkit' );
+		return __( 'One place for the organization\'s name, phone, email, address, hours, social links and policies, shown anywhere with [b61_details field="…"]. Imports an existing ACF "Global Info" page.', 'b61-toolkit' );
 	}
 
 	public function enabled_by_default() {
@@ -45,7 +46,7 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 	/** key => [label, type, group, help] */
 	public static function fields() {
 		return array(
-			'name'               => array( __( 'School name', 'b61-toolkit' ), 'text', 'contact', __( 'Leave empty to use the Site Title.', 'b61-toolkit' ) ),
+			'name'               => array( __( 'Organization name', 'b61-toolkit' ), 'text', 'contact', __( 'Leave empty to use the Site Title.', 'b61-toolkit' ) ),
 			'phone'              => array( __( 'Phone', 'b61-toolkit' ), 'text', 'contact', __( 'As people should read it, e.g. (555) 123-4567. The tap-to-call link is made for you.', 'b61-toolkit' ) ),
 			'email'              => array( __( 'Email', 'b61-toolkit' ), 'email', 'contact', '' ),
 			'address'            => array( __( 'Address', 'b61-toolkit' ), 'textarea', 'contact', __( 'One line per row.', 'b61-toolkit' ) ),
@@ -55,7 +56,7 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 			'instagram'          => array( __( 'Instagram', 'b61-toolkit' ), 'url', 'social', '' ),
 			'youtube'            => array( __( 'YouTube', 'b61-toolkit' ), 'url', 'social', '' ),
 			'linkedin'           => array( __( 'LinkedIn', 'b61-toolkit' ), 'url', 'social', '' ),
-			'policy_admissions'  => array( __( 'Non-discrimination policy — admissions', 'b61-toolkit' ), 'policy', 'policies', '' ),
+			'policy_admissions'  => array( __( 'Non-discrimination policy — admissions', 'b61-toolkit' ), 'policy', 'policies', __( 'Schools: required on many sites. Leave empty if it doesn\'t apply.', 'b61-toolkit' ) ),
 			'policy_hiring'      => array( __( 'Non-discrimination policy — hiring', 'b61-toolkit' ), 'policy', 'policies', '' ),
 		);
 	}
@@ -77,7 +78,7 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 		return $out;
 	}
 
-	/** Raw value of one field ('' if unknown). School name falls back to the Site Title. */
+	/** Raw value of one field ('' if unknown). The name falls back to the Site Title. */
 	public static function get( $key ) {
 		$v = self::values();
 		if ( 'name' === $key && '' === $v['name'] ) {
@@ -99,7 +100,8 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 	public function init() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_init', array( $this, 'maybe_import_global_info' ) );
-		add_shortcode( 'b61_school', array( $this, 'shortcode' ) );
+		add_shortcode( 'b61_details', array( $this, 'shortcode' ) );
+		add_shortcode( 'b61_school', array( $this, 'shortcode' ) ); // Original name, kept working.
 	}
 
 	public function activate() {
@@ -108,7 +110,7 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 
 	/**
 	 * One-time copy from the ACF "Global Info" options page (options_* rows).
-	 * Runs only while School Details is still empty, so it never overwrites.
+	 * Runs only while Organization Details is still empty, so it never overwrites.
 	 */
 	public function maybe_import_global_info() {
 		if ( false !== get_option( self::OPTION ) ) {
@@ -143,7 +145,7 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 	/* ------------------------------------------------------------------ */
 
 	public function register_admin_page() {
-		add_menu_page( __( 'School Details', 'b61-toolkit' ), __( 'School Details', 'b61-toolkit' ), 'manage_options', self::PAGE_SLUG, array( $this, 'render_settings' ), 'dashicons-building', 59 );
+		add_menu_page( __( 'Organization Details', 'b61-toolkit' ), __( 'Organization Details', 'b61-toolkit' ), 'manage_options', self::PAGE_SLUG, array( $this, 'render_settings' ), 'dashicons-building', 59 );
 	}
 
 	public function register_settings() {
@@ -182,8 +184,8 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 		$v = self::values();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'School Details', 'b61-toolkit' ); ?></h1>
-			<p><?php echo wp_kses( __( 'Used across the site — show any of these with <code>[b61_school field="phone"]</code> (field names are listed beside each box).', 'b61-toolkit' ), array( 'code' => array() ) ); ?></p>
+			<h1><?php esc_html_e( 'Organization Details', 'b61-toolkit' ); ?></h1>
+			<p><?php echo wp_kses( __( 'Used across the site — show any of these with <code>[b61_details field="phone"]</code> (field names are listed beside each box).', 'b61-toolkit' ), array( 'code' => array() ) ); ?></p>
 			<form method="post" action="options.php">
 				<?php settings_fields( self::OPTION . '_group' ); ?>
 				<?php foreach ( self::groups() as $group => $group_label ) : ?>
@@ -224,11 +226,11 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 	/* ------------------------------------------------------------------ */
 
 	public function shortcode( $atts ) {
-		$atts  = shortcode_atts( array( 'field' => '', 'link' => '1' ), $atts, 'b61_school' );
+		$atts  = shortcode_atts( array( 'field' => '', 'link' => '1' ), $atts, 'b61_details' );
 		$key   = sanitize_key( $atts['field'] );
 		$field = self::fields()[ $key ] ?? null;
 		if ( ! $field ) {
-			return current_user_can( 'edit_posts' ) ? '<!-- b61_school: unknown field "' . esc_html( $key ) . '" -->' : '';
+			return current_user_can( 'edit_posts' ) ? '<!-- b61_details: unknown field "' . esc_html( $key ) . '" -->' : '';
 		}
 		$value = self::get( $key );
 		if ( '' === trim( $value ) ) {
@@ -261,9 +263,16 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 	}
 }
 
-if ( ! function_exists( 'b61_school' ) ) {
-	/** Raw School Details value, e.g. b61_school( 'phone' ). */
-	function b61_school( $key ) {
+if ( ! function_exists( 'b61_details' ) ) {
+	/** Raw Organization Details value, e.g. b61_details( 'phone' ). */
+	function b61_details( $key ) {
 		return class_exists( 'B61_Module_School_Details' ) && b61_toolkit()->is_enabled( 'school_details' ) ? B61_Module_School_Details::get( $key ) : '';
+	}
+}
+
+if ( ! function_exists( 'b61_school' ) ) {
+	/** Original name of b61_details(), kept working. */
+	function b61_school( $key ) {
+		return b61_details( $key );
 	}
 }

@@ -47,8 +47,10 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 				return esc_html__( 'API key saved for this site.', 'b61-toolkit' );
 		}
 		$where = is_multisite()
-			? __( 'No OpenAI API key yet — add one in Network Admin → B61 Toolkit, or for this site under B61 Toolkit → AI Alt Text.', 'b61-toolkit' )
-			: __( 'No OpenAI API key saved yet — add one under B61 Toolkit → AI Alt Text.', 'b61-toolkit' );
+			/* translators: %s: plugin menu name */
+			? sprintf( __( 'No OpenAI API key yet — add one in Network Admin → %1$s, or for this site under %1$s → AI Alt Text.', 'b61-toolkit' ), B61_Toolkit::brand( 'menu' ) )
+			/* translators: %s: plugin menu name */
+			: sprintf( __( 'No OpenAI API key saved yet — add one under %s → AI Alt Text.', 'b61-toolkit' ), B61_Toolkit::brand( 'menu' ) );
 		return '<span style="color:#b32d2e;">' . esc_html( $where ) . '</span>';
 	}
 
@@ -212,7 +214,7 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 					<tr><th scope="row">OpenAI API Key</th><td>
 						<?php $source = self::key_source(); ?>
 						<?php if ( 'constant' === $source || 'network' === $source ) : ?>
-							<p><?php echo esc_html( 'constant' === $source ? __( 'Set in wp-config.php for this install.', 'b61-toolkit' ) : __( 'Using the network-wide key, managed by Banner 61.', 'b61-toolkit' ) ); ?></p>
+							<p><?php echo esc_html( 'constant' === $source ? __( 'Set in wp-config.php for this install.', 'b61-toolkit' ) : __( 'Using the network-wide key set by your site administrator.', 'b61-toolkit' ) ); ?></p>
 						<?php else : ?>
 							<input type="password" name="<?php echo $key; ?>[api_key]" value="" class="regular-text" autocomplete="new-password" placeholder="<?php echo esc_attr( 'site' === $source ? __( 'Saved — leave blank to keep', 'b61-toolkit' ) : '' ); ?>" />
 							<?php if ( 'site' === $source ) : ?>
@@ -220,13 +222,13 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 							<?php endif; ?>
 						<?php endif; ?>
 					</td></tr>
-					<tr><th scope="row">Model</th><td><code><?php echo esc_html( self::MODEL ); ?></code><p class="description">Vision model used for generation. Managed by Banner 61.</p></td></tr>
+					<tr><th scope="row">Model</th><td><code><?php echo esc_html( self::MODEL ); ?></code><p class="description">Vision model used for generation.</p></td></tr>
 					<tr><th scope="row">Auto-generate on upload</th><td><label><input type="checkbox" name="<?php echo $key; ?>[auto_on_upload]" value="1" <?php checked( $opts['auto_on_upload'], '1' ); ?> /> Generate alt text automatically when new images are uploaded.</label></td></tr>
 					<tr><th scope="row">Overwrite existing alt text</th><td><label><input type="checkbox" name="<?php echo $key; ?>[overwrite_existing]" value="1" <?php checked( $opts['overwrite_existing'], '1' ); ?> /> Replace existing alt text. Leave unchecked for safer operation.</label></td></tr>
 					<tr><th scope="row">Include weak alt text</th><td><label><input type="checkbox" name="<?php echo $key; ?>[generate_for_weak]" value="1" <?php checked( $opts['generate_for_weak'], '1' ); ?> /> Treat filenames, duplicates, and generic text like "image" as candidates.</label></td></tr>
-					<tr><th scope="row">School / Organization Name</th><td><input type="text" name="<?php echo $key; ?>[school_name]" value="<?php echo esc_attr( $opts['school_name'] ); ?>" class="regular-text" /></td></tr>
+					<tr><th scope="row">Organization Name</th><td><input type="text" name="<?php echo $key; ?>[school_name]" value="<?php echo esc_attr( $opts['school_name'] ); ?>" class="regular-text" /></td></tr>
 					<tr><th scope="row">Default Target Keyword</th><td><input type="text" name="<?php echo $key; ?>[target_keyword]" value="<?php echo esc_attr( $opts['target_keyword'] ); ?>" class="regular-text" /></td></tr>
-					<tr><th scope="row">School Name Usage</th><td><select name="<?php echo $key; ?>[include_school_name]"><option value="always" <?php selected( $opts['include_school_name'], 'always' ); ?>>Always</option><option value="sometimes" <?php selected( $opts['include_school_name'], 'sometimes' ); ?>>Sometimes</option><option value="never" <?php selected( $opts['include_school_name'], 'never' ); ?>>Never</option></select></td></tr>
+					<tr><th scope="row">Name Usage</th><td><select name="<?php echo $key; ?>[include_school_name]"><option value="always" <?php selected( $opts['include_school_name'], 'always' ); ?>>Always</option><option value="sometimes" <?php selected( $opts['include_school_name'], 'sometimes' ); ?>>Sometimes</option><option value="never" <?php selected( $opts['include_school_name'], 'never' ); ?>>Never</option></select></td></tr>
 					<tr><th scope="row">Style</th><td><select name="<?php echo $key; ?>[style]"><option value="concise" <?php selected( $opts['style'], 'concise' ); ?>>Concise</option><option value="descriptive" <?php selected( $opts['style'], 'descriptive' ); ?>>Descriptive</option></select></td></tr>
 					<tr><th scope="row">Max Characters</th><td><input type="number" min="40" max="250" name="<?php echo $key; ?>[max_chars]" value="<?php echo esc_attr( $opts['max_chars'] ); ?>" /></td></tr>
 					<tr><th scope="row">Bulk Batch Limit</th><td><input type="number" min="1" max="100" name="<?php echo $key; ?>[batch_limit]" value="<?php echo esc_attr( $opts['batch_limit'] ); ?>" /></td></tr>
@@ -457,7 +459,7 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 			return new WP_Error(
 				'image_too_large',
 				sprintf(
-					'Image is %s, over the %s limit. Choose a smaller image size under B61 Toolkit → AI Alt Text.',
+					'Image is %s, over the %s limit. Choose a smaller image size under ' . B61_Toolkit::brand( 'menu' ) . ' → AI Alt Text.',
 					size_format( $bytes ),
 					size_format( self::MAX_IMAGE_BYTES )
 				)
@@ -578,7 +580,7 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 			}
 		}
 
-		return 'Organization/school name: ' . $name . '. Work it in once, naturally — never as a tacked-on suffix.';
+		return 'Organization name: ' . $name . '. Work it in once, naturally — never as a tacked-on suffix.';
 	}
 
 	private function get_context_summary( $attachment_id ) {

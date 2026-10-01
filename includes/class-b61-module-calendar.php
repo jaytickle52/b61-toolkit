@@ -103,7 +103,7 @@ class B61_Module_Calendar extends B61_Toolkit_Module {
 			array(
 				'timeout'             => 10,
 				'limit_response_size' => self::MAX_BYTES,
-				'user-agent'          => 'B61 Toolkit Calendar; ' . home_url( '/' ),
+				'user-agent'          => 'WordPress Calendar; ' . home_url( '/' ),
 			)
 		);
 		$body = is_wp_error( $response ) ? '' : (string) wp_remote_retrieve_body( $response );

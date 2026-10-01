@@ -62,7 +62,7 @@ class B61_Module_Testimonials extends B61_Toolkit_Module {
 			'b61_testimonial_role'  => array(
 				'label'    => __( 'Role', 'b61-toolkit' ),
 				'type'     => 'text',
-				'desc'     => __( 'Who they are to the school, e.g. "Parent of a 3rd grader" or "Class of 2019".', 'b61-toolkit' ),
+				'desc'     => __( 'Who they are, e.g. "Client since 2019", "Parent of a 3rd grader" or "Volunteer".', 'b61-toolkit' ),
 				'sanitize' => 'sanitize_text_field',
 			),
 		);

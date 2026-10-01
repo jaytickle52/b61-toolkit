@@ -1,6 +1,6 @@
 <?php
 /**
- * Login Page module: the school's logo and colours on wp-login.php.
+ * Login Page module: the site's logo and colours on wp-login.php.
  *
  * Logo (falls back to the Site Icon, then the theme's custom logo), background
  * colour, button colour. The logo links to the site, not WordPress.org. Button
@@ -27,7 +27,7 @@ class B61_Module_Login_Page extends B61_Toolkit_Module {
 	}
 
 	public function description() {
-		return __( 'Puts the school\'s logo and colours on the WordPress login screen, with the logo linking back to the site.', 'b61-toolkit' );
+		return __( 'Puts your logo and colours on the WordPress login screen, with the logo linking back to the site.', 'b61-toolkit' );
 	}
 
 	public function enabled_by_default() {

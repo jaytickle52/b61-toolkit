@@ -50,7 +50,8 @@ class B61_Module_Balanced_Headlines extends B61_Module_Text_Wrap {
 	}
 
 	public function description() {
-		return __( 'Evens out the line lengths of headings, subheads, eyebrows, pull quotes and emphasis lines so a headline never ends on a single orphaned word. Needs Banner 61 Elements 1.51.0+.', 'b61-toolkit' );
+		/* translators: %s: Elements plugin name */
+		return sprintf( __( 'Evens out the line lengths of headings, subheads, eyebrows, pull quotes and emphasis lines so a headline never ends on a single orphaned word. Needs %s 1.51.0+.', 'b61-toolkit' ), B61_Toolkit::brand( 'elements' ) );
 	}
 
 	protected function property() {
@@ -73,7 +74,8 @@ class B61_Module_Paragraph_Orphans extends B61_Module_Text_Wrap {
 	}
 
 	public function description() {
-		return __( 'Stops paragraphs and list items from ending on a lone word, without reshaping the rest of the text. Supported in Chrome, Edge and Safari; other browsers ignore it. Needs Banner 61 Elements 1.51.0+.', 'b61-toolkit' );
+		/* translators: %s: Elements plugin name */
+		return sprintf( __( 'Stops paragraphs and list items from ending on a lone word, without reshaping the rest of the text. Supported in Chrome, Edge and Safari; other browsers ignore it. Needs %s 1.51.0+.', 'b61-toolkit' ), B61_Toolkit::brand( 'elements' ) );
 	}
 
 	protected function property() {

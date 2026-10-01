@@ -18,7 +18,83 @@ class B61_Toolkit {
 	/** @var B61_Toolkit_Module[] */
 	private $active = array();
 
+	/**
+	 * White-label branding. Banner 61's names are the defaults; a partner
+	 * install overrides any of them in wp-config.php —
+	 *
+	 *   define( 'B61_TOOLKIT_BRAND_NAME', 'Acme Site Tools' );
+	 *   define( 'B61_TOOLKIT_BRAND_MENU', 'Site Tools' );          // admin menu label (defaults to the name)
+	 *   define( 'B61_TOOLKIT_BRAND_AUTHOR', 'Acme Web Co.' );
+	 *   define( 'B61_TOOLKIT_BRAND_AUTHOR_URI', 'https://acme.example' );
+	 *   define( 'B61_TOOLKIT_BRAND_ICON', 'dashicons-admin-generic' ); // dashicon or data:image/svg+xml URI
+	 *   define( 'B61_TOOLKIT_BRAND_ELEMENTS', 'Acme Elements' );   // name of the companion Elements plugin
+	 *
+	 * — or with the b61_toolkit_brand filter. Internal names (post types,
+	 * option keys, shortcodes, the plugin folder) never change.
+	 *
+	 * @param string|null $key name|menu|author|author_uri|icon|elements, or null for all.
+	 * @return string|array
+	 */
+	public static function brand( $key = null ) {
+		$c     = static function ( $const, $default ) {
+			return ( defined( $const ) && '' !== trim( (string) constant( $const ) ) ) ? (string) constant( $const ) : $default;
+		};
+		$name  = $c( 'B61_TOOLKIT_BRAND_NAME', 'B61 Toolkit' );
+		$brand = apply_filters(
+			'b61_toolkit_brand',
+			array(
+				'name'       => $name,
+				'menu'       => $c( 'B61_TOOLKIT_BRAND_MENU', $name ),
+				'author'     => $c( 'B61_TOOLKIT_BRAND_AUTHOR', 'Banner 61' ),
+				'author_uri' => $c( 'B61_TOOLKIT_BRAND_AUTHOR_URI', '' ),
+				'icon'       => $c( 'B61_TOOLKIT_BRAND_ICON', 'dashicons-screenoptions' ),
+				'elements'   => $c( 'B61_TOOLKIT_BRAND_ELEMENTS', 'Banner 61 Elements' ),
+			)
+		);
+		if ( null === $key ) {
+			return $brand;
+		}
+		return isset( $brand[ $key ] ) ? (string) $brand[ $key ] : '';
+	}
+
+	/** True when this install shows someone else's name instead of Banner 61's. */
+	public static function is_white_label() {
+		return 'B61 Toolkit' !== self::brand( 'name' ) || 'Banner 61' !== self::brand( 'author' );
+	}
+
+	/** Plugins screen and update details show the brand, not Banner 61. */
+	public function brand_plugin_row( $plugins ) {
+		$file = plugin_basename( B61_TOOLKIT_FILE );
+		if ( isset( $plugins[ $file ] ) && self::is_white_label() ) {
+			$b = self::brand();
+			$plugins[ $file ]['Name']        = $b['name'];
+			$plugins[ $file ]['Title']       = $b['name'];
+			$plugins[ $file ]['Author']      = $b['author'];
+			$plugins[ $file ]['AuthorName']  = $b['author'];
+			$plugins[ $file ]['AuthorURI']   = $b['author_uri'];
+			$plugins[ $file ]['PluginURI']   = '';
+			/* translators: %s: plugin name */
+			$plugins[ $file ]['Description'] = sprintf( __( 'Site toolkit. Each feature is switched on per site under %s → Features.', 'b61-toolkit' ), $b['menu'] );
+		}
+		return $plugins;
+	}
+
+	public function brand_update_info( $info ) {
+		if ( self::is_white_label() && is_object( $info ) ) {
+			$info->name     = self::brand( 'name' );
+			$info->author   = self::brand( 'author' );
+			$info->homepage = self::brand( 'author_uri' );
+			if ( isset( $info->sections['description'] ) ) {
+				/* translators: %s: plugin menu name */
+				$info->sections['description'] = esc_html( sprintf( __( 'Site toolkit. Each feature is switched on per site under %s → Features.', 'b61-toolkit' ), self::brand( 'menu' ) ) );
+			}
+		}
+		return $info;
+	}
+
 	public function boot() {
+		add_filter( 'all_plugins', array( $this, 'brand_plugin_row' ) );
+		add_filter( 'b61_github_updater_info', array( $this, 'brand_update_info' ) );
 		$this->register_modules();
 		$this->init_active_modules();
 
@@ -34,8 +110,8 @@ class B61_Toolkit {
 
 	/**
 	 * Who may switch features on and off. On a network that is super admins
-	 * only — school staff are site admins and should not be able to turn
-	 * Banner 61 features off. Single sites keep manage_options.
+	 * only — client staff are site admins and should not be able to turn
+	 * agency-managed features off. Single sites keep manage_options.
 	 */
 	public function capability() {
 		$cap = is_multisite() ? 'manage_network_options' : 'manage_options';
@@ -129,12 +205,12 @@ class B61_Toolkit {
 
 	public function admin_menu() {
 		add_menu_page(
-			__( 'B61 Toolkit', 'b61-toolkit' ),
-			__( 'B61 Toolkit', 'b61-toolkit' ),
+			self::brand( 'name' ),
+			self::brand( 'menu' ),
 			$this->capability(),
 			self::MENU_SLUG,
 			array( $this, 'render_features_page' ),
-			'dashicons-screenoptions',
+			self::brand( 'icon' ),
 			58
 		);
 
@@ -208,7 +284,7 @@ class B61_Toolkit {
 		$settings = $this->settings();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'B61 Toolkit', 'b61-toolkit' ); ?></h1>
+			<h1><?php echo esc_html( self::brand( 'name' ) ); ?></h1>
 			<p class="description" style="max-width:44em;">
 				<?php esc_html_e( 'Each feature below is independent. Switch one off and everything it adds — post types, admin screens, generated fields — disappears from the site without touching the content already saved.', 'b61-toolkit' ); ?>
 			</p>
@@ -251,7 +327,10 @@ class B61_Toolkit {
 			<p class="description">
 				<?php
 				$updater = function_exists( 'b61_toolkit_updater' ) ? b61_toolkit_updater() : null;
-				if ( $updater && $updater->is_configured() ) {
+				if ( $updater && $updater->is_configured() && self::is_white_label() ) {
+					/* translators: %s: version */
+					printf( esc_html__( 'Version %s · automatic updates on', 'b61-toolkit' ), esc_html( B61_TOOLKIT_VERSION ) );
+				} elseif ( $updater && $updater->is_configured() ) {
 					/* translators: 1: version, 2: GitHub repo */
 					printf( esc_html__( 'Version %1$s · updates from GitHub (%2$s)', 'b61-toolkit' ), esc_html( B61_TOOLKIT_VERSION ), esc_html( $updater->repo() ) );
 				} else {

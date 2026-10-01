@@ -38,12 +38,12 @@ class B61_Toolkit_Network {
 
 	public function menu() {
 		add_menu_page(
-			__( 'B61 Toolkit', 'b61-toolkit' ),
-			__( 'B61 Toolkit', 'b61-toolkit' ),
+			B61_Toolkit::brand( 'name' ),
+			B61_Toolkit::brand( 'menu' ),
 			'manage_network_options',
 			self::SLUG,
 			array( $this, 'render' ),
-			'dashicons-screenoptions',
+			B61_Toolkit::brand( 'icon' ),
 			58
 		);
 	}
@@ -79,7 +79,7 @@ class B61_Toolkit_Network {
 		$modules  = $this->toolkit->modules();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'B61 Toolkit — Network', 'b61-toolkit' ); ?></h1>
+			<h1><?php /* translators: %s: plugin name */ echo esc_html( sprintf( __( '%s — Network', 'b61-toolkit' ), B61_Toolkit::brand( 'name' ) ) ); ?></h1>
 
 			<?php if ( isset( $_GET['updated'] ) ) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Network settings saved.', 'b61-toolkit' ); ?></p></div>
@@ -110,7 +110,7 @@ class B61_Toolkit_Network {
 
 			<hr />
 			<h2><?php esc_html_e( 'Features by site', 'b61-toolkit' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'Read-only. Switch features on a site from that site\'s B61 Toolkit → Features screen.', 'b61-toolkit' ); ?></p>
+			<p class="description"><?php /* translators: %s: plugin menu name */ echo esc_html( sprintf( __( 'Read-only. Switch features on a site from that site\'s %s → Features screen.', 'b61-toolkit' ), B61_Toolkit::brand( 'menu' ) ) ); ?></p>
 			<table class="widefat striped" style="margin-top:1em;">
 				<thead>
 					<tr>

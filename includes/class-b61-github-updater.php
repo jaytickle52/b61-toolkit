@@ -217,7 +217,7 @@ class B61_GitHub_Updater {
 		}
 		$data = get_plugin_data( $this->file, false, false );
 
-		return (object) array(
+		$info = (object) array(
 			'name'          => $data['Name'],
 			'slug'          => $this->slug,
 			'version'       => $release ? $release['version'] : $this->version,
@@ -231,9 +231,12 @@ class B61_GitHub_Updater {
 				'description' => esc_html( $data['Description'] ),
 				'changelog'   => $release && '' !== trim( $release['notes'] )
 					? nl2br( esc_html( $release['notes'] ) )
-					: esc_html__( 'See the release on GitHub.', 'b61-toolkit' ),
+					: esc_html__( 'See the release notes.', 'b61-toolkit' ),
 			),
 		);
+
+		/** Lets the owning plugin re-brand the "View details" box. */
+		return apply_filters( 'b61_github_updater_info', $info, $this->slug );
 	}
 
 	/**

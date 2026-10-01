@@ -52,7 +52,7 @@ class B61_Module_People extends B61_Toolkit_Module {
 			'b61_person_title'       => array(
 				'label'    => __( 'Title / Position', 'b61-toolkit' ),
 				'type'     => 'text',
-				'desc'     => __( 'For example: Head of School, Third Grade Teacher.', 'b61-toolkit' ),
+				'desc'     => __( 'For example: Executive Director, Pastor, Third Grade Teacher.', 'b61-toolkit' ),
 				'sanitize' => 'sanitize_text_field',
 			),
 			'b61_person_credentials' => array(
