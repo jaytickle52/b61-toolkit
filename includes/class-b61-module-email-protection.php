@@ -70,6 +70,23 @@ class B61_Module_Email_Protection extends B61_Toolkit_Module {
 			return $html;
 		}
 
+		// Set script/style/textarea/title/noscript blocks aside whole first: their
+		// contents (JSON-LD, inline JS with "a<b") must neither be encoded nor be
+		// mistaken for tags.
+		$orig = $html;
+		$raw  = array();
+		$html = preg_replace_callback(
+			'/<(script|style|textarea|title|noscript)\b[^>]*>.*?<\/\1\s*>/is',
+			static function ( $m ) use ( &$raw ) {
+				$raw[] = $m[0];
+				return "\x00b61raw" . ( count( $raw ) - 1 ) . "\x00";
+			},
+			$html
+		);
+		if ( null === $html ) {
+			return $orig;
+		}
+
 		$parts = preg_split( '/(<!--.*?-->|<[^>]+>)/s', $html, -1, PREG_SPLIT_DELIM_CAPTURE );
 		if ( false === $parts ) {
 			return $html;
@@ -130,6 +147,16 @@ class B61_Module_Email_Protection extends B61_Toolkit_Module {
 				);
 			}
 		}
-		return implode( '', $parts );
+		$out = implode( '', $parts );
+		if ( $raw ) {
+			$out = preg_replace_callback(
+				'/\x00b61raw(\d+)\x00/',
+				static function ( $m ) use ( $raw ) {
+					return $raw[ (int) $m[1] ];
+				},
+				$out
+			);
+		}
+		return $out;
 	}
 }

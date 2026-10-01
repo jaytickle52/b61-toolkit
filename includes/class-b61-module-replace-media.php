@@ -165,8 +165,19 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 		$dir    = dirname( $old_file );
 		$target = ! empty( $meta['original_image'] ) ? $dir . '/' . $meta['original_image'] : $old_file;
 
-		// Remove the old file, its scaled copy and every generated size.
-		$old = array( $old_file, $target );
+		$was_scaled = $target !== $old_file;
+
+		// Put the new file in place first; only then clear out the old copies,
+		// so a failed move never leaves the attachment without a file.
+		if ( ! @rename( $upload['file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.rename_rename -- same-directory move inside uploads, as core's own upload handling does.
+			wp_delete_file( $upload['file'] );
+			return new WP_Error( 'b61_replace_move', __( 'The new file could not be saved in place of the old one.', 'b61-toolkit' ) );
+		}
+		$perms = fileperms( dirname( $target ) ) & 0000666;
+		@chmod( $target, $perms ); // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- same permissions core gives uploads.
+
+		// Remove the old scaled copy and every generated size.
+		$old = array( $old_file );
 		if ( ! empty( $meta['sizes'] ) && is_array( $meta['sizes'] ) ) {
 			foreach ( $meta['sizes'] as $size ) {
 				if ( ! empty( $size['file'] ) ) {
@@ -175,20 +186,32 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 			}
 		}
 		foreach ( array_unique( $old ) as $path ) {
-			if ( $path !== $upload['file'] && file_exists( $path ) ) {
+			if ( $path !== $target && file_exists( $path ) ) {
 				wp_delete_file( $path );
 			}
 		}
 
-		if ( ! @rename( $upload['file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.rename_rename -- same-directory move inside uploads, as core's own upload handling does.
-			wp_delete_file( $upload['file'] );
-			return new WP_Error( 'b61_replace_move', __( 'The new file could not be saved in place of the old one.', 'b61-toolkit' ) );
+		// Keep the main file's URL: an unscaled original must not turn into
+		// "-scaled" because the new image happens to be larger.
+		$no_scale = static function () {
+			return false;
+		};
+		if ( ! $was_scaled ) {
+			add_filter( 'big_image_size_threshold', $no_scale, 999 );
 		}
-		$perms = fileperms( dirname( $target ) ) & 0000666;
-		@chmod( $target, $perms ); // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- same permissions core gives uploads.
-
 		update_attached_file( $attachment_id, $target );
 		$new_meta = wp_generate_attachment_metadata( $attachment_id, $target );
+		remove_filter( 'big_image_size_threshold', $no_scale, 999 );
+
+		// …and a "-scaled" URL must keep working when the new image is small
+		// enough not to need scaling: serve the new file under the old name.
+		if ( $was_scaled && get_attached_file( $attachment_id ) !== $old_file && is_array( $new_meta ) ) {
+			if ( @copy( $target, $old_file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.file_system_operations_copy -- same directory inside uploads.
+				update_attached_file( $attachment_id, $old_file );
+				$new_meta['file']           = _wp_relative_upload_path( $old_file );
+				$new_meta['original_image'] = wp_basename( $target );
+			}
+		}
 		wp_update_attachment_metadata( $attachment_id, $new_meta );
 
 		wp_update_post(

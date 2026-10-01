@@ -310,7 +310,7 @@ class B61_Module_Announcement_Bar extends B61_Toolkit_Module {
 var k='b61-ann-closed',id=b.getAttribute('data-id'),now=Date.now()/1000,s=+b.getAttribute('data-start')||0,e=+b.getAttribute('data-end')||0;
 function closed(){try{return localStorage.getItem(k)===id}catch(x){return false}}
 if(document.body&&b.parentNode!==document.body&&b.getAttribute('data-moved')==='0'){document.body.insertBefore(b,document.body.firstChild)}
-if((e&&now>=e)||(s&&now<s)){b.hidden=true;b.parentNode.removeChild(b);return}
+if((e&&now>=e)||(s&&s>now)){b.hidden=true;b.parentNode.removeChild(b);return}
 var c=b.querySelector('.b61-announcement__close');
 if(c&&closed()){b.parentNode.removeChild(b);return}
 b.hidden=false;

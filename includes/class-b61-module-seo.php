@@ -320,7 +320,8 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 			return '';
 		}
 		$custom = trim( (string) get_post_meta( $post->ID, self::META['description'], true ) );
-		if ( '' !== $custom || ! $auto ) {
+		// Password-protected pages never give away their text (WordPress hides their excerpts too).
+		if ( '' !== $custom || ! $auto || ( ! is_admin() && post_password_required( $post ) ) ) {
 			return $custom;
 		}
 		if ( has_excerpt( $post ) ) {
@@ -460,7 +461,9 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		$c = self::current();
 		if ( $c['noindex'] ) {
 			$robots['noindex'] = true;
-			$robots['follow']  = true;
+			if ( empty( $robots['nofollow'] ) ) {
+				$robots['follow'] = true;
+			}
 			unset( $robots['max-image-preview'] );
 		} elseif ( '0' !== get_option( 'blog_public' ) ) {
 			$robots['max-image-preview'] = 'large';
@@ -531,7 +534,9 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 
 	/** Full URL of this request (for pages without a canonical, such as search results). */
 	public static function request_url() {
-		$host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		// The site's own host, never the request's Host header (cache poisoning).
+		$home = wp_parse_url( home_url() );
+		$host = ( $home['host'] ?? '' ) . ( isset( $home['port'] ) ? ':' . $home['port'] : '' );
 		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- escaped by esc_url_raw.
 		return esc_url_raw( set_url_scheme( '//' . $host . $uri ) );
 	}
@@ -569,6 +574,10 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 	}
 
 	public function sitemap_query( $args, $post_type ) {
+		if ( 'b61_event' === $post_type ) {
+			// Past events keep their pages; list them all, not only upcoming ones.
+			$args['b61_event_scope'] = 'all';
+		}
 		$args['meta_query'] = isset( $args['meta_query'] ) && is_array( $args['meta_query'] ) ? $args['meta_query'] : array(); // phpcs:ignore WordPress.DB.SlowDBQuery
 		$args['meta_query'][] = array(
 			'relation' => 'OR',

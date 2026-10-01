@@ -277,6 +277,13 @@ class B61_SEO_Redirects {
 				$log[ $path ]['ref'] = $ref;
 			}
 		} else {
+			// Site-wide cap on new entries, so a bot spraying random addresses
+			// can't rewrite the log on every request.
+			$new = (int) get_transient( 'b61_404_new' );
+			if ( $new >= 20 ) {
+				return;
+			}
+			set_transient( 'b61_404_new', $new + 1, MINUTE_IN_SECONDS );
 			$log[ $path ] = array(
 				'hits' => 1,
 				'last' => $now,
