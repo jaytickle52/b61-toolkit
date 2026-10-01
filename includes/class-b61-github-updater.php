@@ -126,13 +126,28 @@ class B61_GitHub_Updater {
 			return null;
 		}
 
+		// Prefer a zip attached to the release: "b61-toolkit.zip" exactly, or
+		// failing that any "b61-toolkit…zip" (e.g. b61-toolkit-1.7.1.zip). The
+		// source zipball is the last resort — it is only right when the repo
+		// holds the plugin's source files.
 		$package = isset( $body['zipball_url'] ) ? (string) $body['zipball_url'] : '';
 		if ( '' === $this->token && ! empty( $body['assets'] ) && is_array( $body['assets'] ) ) {
+			$loose = '';
 			foreach ( $body['assets'] as $asset ) {
-				if ( isset( $asset['name'], $asset['browser_download_url'] ) && $this->slug . '.zip' === $asset['name'] ) {
-					$package = (string) $asset['browser_download_url'];
+				if ( ! isset( $asset['name'], $asset['browser_download_url'] ) ) {
+					continue;
+				}
+				$name = (string) $asset['name'];
+				if ( $this->slug . '.zip' === $name ) {
+					$loose = (string) $asset['browser_download_url'];
 					break;
 				}
+				if ( '' === $loose && 0 === stripos( $name, $this->slug ) && '.zip' === strtolower( substr( $name, -4 ) ) ) {
+					$loose = (string) $asset['browser_download_url'];
+				}
+			}
+			if ( '' !== $loose ) {
+				$package = $loose;
 			}
 		}
 

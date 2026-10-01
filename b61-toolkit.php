@@ -2,19 +2,19 @@
 /**
  * Plugin Name: B61 Toolkit
  * Description: Banner 61's modular site toolkit. Each feature (People, Testimonials, Events, content ordering, duplication, media replacement, admin cleanup, login page, email protection, password pages, calendar feeds, AI alt text and more) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
- * Version:     1.7.0
+ * Version:     1.7.1
  * Author:      Banner 61
  * Text Domain: b61-toolkit
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Update URI:  https://github.com/banner61/b61-toolkit
+ * Update URI:  https://github.com/jaytickle52/b61-toolkit
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'B61_TOOLKIT_VERSION', '1.7.0' );
+define( 'B61_TOOLKIT_VERSION', '1.7.1' );
 define( 'B61_TOOLKIT_FILE', __FILE__ );
 define( 'B61_TOOLKIT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'B61_TOOLKIT_URL', plugin_dir_url( __FILE__ ) );
@@ -25,7 +25,7 @@ define( 'B61_TOOLKIT_URL', plugin_dir_url( __FILE__ ) );
  * the repo is private: use a fine-grained token with read-only Contents access.
  */
 if ( ! defined( 'B61_TOOLKIT_GITHUB_REPO' ) ) {
-	define( 'B61_TOOLKIT_GITHUB_REPO', 'banner61/b61-toolkit' );
+	define( 'B61_TOOLKIT_GITHUB_REPO', 'jaytickle52/b61-toolkit' );
 }
 if ( ! defined( 'B61_TOOLKIT_GITHUB_TOKEN' ) ) {
 	define( 'B61_TOOLKIT_GITHUB_TOKEN', '' );
