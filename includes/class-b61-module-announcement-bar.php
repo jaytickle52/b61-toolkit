@@ -192,7 +192,7 @@ class B61_Module_Announcement_Bar extends B61_Toolkit_Module {
 		$key = self::OPTION;
 		$tz  = wp_timezone_string();
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Announcement Bar', 'b61-toolkit' ); ?></h1>
 			<?php settings_errors( self::OPTION ); ?>
 			<?php if ( '1' === $s['active'] && '' !== $s['message'] ) : ?>
@@ -200,6 +200,7 @@ class B61_Module_Announcement_Bar extends B61_Toolkit_Module {
 			<?php endif; ?>
 			<form method="post" action="options.php">
 				<?php settings_fields( self::OPTION . '_group' ); ?>
+				<h2><?php esc_html_e( 'Message', 'b61-toolkit' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr><th scope="row"><?php esc_html_e( 'Show', 'b61-toolkit' ); ?></th>
 						<td><label><input type="checkbox" name="<?php echo esc_attr( $key ); ?>[active]" value="1" <?php checked( '1', $s['active'] ); ?> /> <?php esc_html_e( 'Show the announcement', 'b61-toolkit' ); ?></label></td></tr>
@@ -211,13 +212,19 @@ class B61_Module_Announcement_Bar extends B61_Toolkit_Module {
 					<tr><th scope="row"><label for="b61-ann-link-text"><?php esc_html_e( 'Button text', 'b61-toolkit' ); ?></label></th>
 						<td><input type="text" id="b61-ann-link-text" name="<?php echo esc_attr( $key ); ?>[link_text]" value="<?php echo esc_attr( $s['link_text'] ); ?>" placeholder="<?php esc_attr_e( 'Learn more', 'b61-toolkit' ); ?>" />
 						<p class="description"><?php esc_html_e( 'Say where it goes — "Read the closing notice", not "Click here".', 'b61-toolkit' ); ?></p></td></tr>
+				</table>
+				<h2><?php esc_html_e( 'Schedule', 'b61-toolkit' ); ?></h2>
+				<table class="form-table" role="presentation">
 					<tr><th scope="row"><label for="b61-ann-start"><?php esc_html_e( 'Start showing', 'b61-toolkit' ); ?></label></th>
 						<td><input type="datetime-local" id="b61-ann-start" name="<?php echo esc_attr( $key ); ?>[start]" value="<?php echo esc_attr( $s['start'] ); ?>" />
 						<?php /* translators: %s: time zone name */ ?>
-						<p class="description"><?php echo esc_html( sprintf( __( 'Optional. Site time (%s). Leave empty to start now.', 'b61-toolkit' ), $tz ) ); ?></p></td></tr>
+						<p class="description"><?php echo esc_html( sprintf( __( 'Optional. The bar appears automatically at this time (site time, %s). Leave empty to start as soon as you save.', 'b61-toolkit' ), $tz ) ); ?></p></td></tr>
 					<tr><th scope="row"><label for="b61-ann-end"><?php esc_html_e( 'Stop showing', 'b61-toolkit' ); ?></label></th>
 						<td><input type="datetime-local" id="b61-ann-end" name="<?php echo esc_attr( $key ); ?>[end]" value="<?php echo esc_attr( $s['end'] ); ?>" />
-						<p class="description"><?php esc_html_e( 'Optional. Leave empty to keep it up until you switch it off.', 'b61-toolkit' ); ?></p></td></tr>
+						<p class="description"><?php esc_html_e( 'Optional. The bar disappears automatically at this time. Leave empty to keep it up until you switch it off.', 'b61-toolkit' ); ?></p></td></tr>
+				</table>
+				<h2><?php esc_html_e( 'Appearance', 'b61-toolkit' ); ?></h2>
+				<table class="form-table" role="presentation">
 					<tr><th scope="row"><label for="b61-ann-bg"><?php esc_html_e( 'Background', 'b61-toolkit' ); ?></label></th>
 						<td><input type="text" class="b61-color" id="b61-ann-bg" name="<?php echo esc_attr( $key ); ?>[background]" value="<?php echo esc_attr( $s['background'] ); ?>" />
 						<p class="description"><?php esc_html_e( 'Text turns black or white automatically for contrast.', 'b61-toolkit' ); ?></p></td></tr>

@@ -111,7 +111,7 @@ class B61_Module_Password_Page extends B61_Toolkit_Module {
 		$s   = self::settings();
 		$key = self::OPTION;
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Password Pages', 'b61-toolkit' ); ?></h1>
 			<p><?php esc_html_e( 'What visitors see on any page or post you protect with a password (Page settings → Visibility → Password protected).', 'b61-toolkit' ); ?></p>
 			<form method="post" action="options.php">

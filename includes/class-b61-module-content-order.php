@@ -131,7 +131,7 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 		}
 		$chosen = self::types();
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Content Order', 'b61-toolkit' ); ?></h1>
 			<p><?php esc_html_e( 'Choose the content types that should have a hand-set order. Each one gets an "Order" screen under its own menu.', 'b61-toolkit' ); ?></p>
 			<form method="post" action="options.php">
@@ -181,7 +181,7 @@ class B61_Module_Content_Order extends B61_Toolkit_Module {
 		);
 		wp_enqueue_script( 'jquery-ui-sortable' );
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1>
 				<?php
 				/* translators: %s: content type name, e.g. People */

@@ -149,7 +149,7 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 	/* ------------------------------------------------------------------ */
 
 	public function register_admin_page() {
-		add_menu_page( __( 'Organization Details', 'b61-toolkit' ), __( 'Organization Details', 'b61-toolkit' ), 'manage_options', self::PAGE_SLUG, array( $this, 'render_settings' ), 'dashicons-building', 59 );
+		add_menu_page( __( 'Organization Details', 'b61-toolkit' ), __( 'Org Details', 'b61-toolkit' ), 'manage_options', self::PAGE_SLUG, array( $this, 'render_settings' ), 'dashicons-building', 59 );
 	}
 
 	public function register_settings() {
@@ -187,7 +187,7 @@ class B61_Module_School_Details extends B61_Toolkit_Module {
 		}
 		$v = self::values();
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Organization Details', 'b61-toolkit' ); ?></h1>
 			<p><?php echo wp_kses( __( 'Used across the site — show any of these with <code>[b61_details field="phone"]</code> (field names are listed beside each box).', 'b61-toolkit' ), array( 'code' => array() ) ); ?></p>
 			<form method="post" action="options.php">

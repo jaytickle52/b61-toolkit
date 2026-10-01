@@ -33,7 +33,7 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 	}
 
 	public function description() {
-		return __( 'Upload a new version of an image or file without changing its URL, so everywhere it is used updates at once. Use the "Replace file" box on the file\'s edit screen.', 'b61-toolkit' );
+		return __( 'Upload a new version of an image or file without changing its URL, so everywhere it is used updates at once. Look for "Replace file…" when you open a file in the Media Library.', 'b61-toolkit' );
 	}
 
 	public function enabled_by_default() {
@@ -45,6 +45,7 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 		add_action( 'post_edit_form_tag', array( $this, 'form_enctype' ) );
 		add_action( 'edit_attachment', array( $this, 'handle' ) );
 		add_filter( 'media_row_actions', array( $this, 'row_action' ), 10, 2 );
+		add_filter( 'attachment_fields_to_edit', array( $this, 'details_button' ), 20, 2 );
 		add_action( 'admin_notices', array( $this, 'notice' ) );
 	}
 
@@ -59,6 +60,26 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 		return $actions;
 	}
 
+	/** "Replace file" button in the media grid's details panel and the Add Media window. */
+	public function details_button( $fields, $post ) {
+		// The edit screen already has the box itself.
+		if ( ! $this->can_replace( $post->ID ) || ( function_exists( 'get_current_screen' ) && get_current_screen() && 'attachment' === get_current_screen()->id ) ) {
+			return $fields;
+		}
+		// Inside a page editor's "Add media" window, open in a new tab so the
+		// page being edited isn't left; in the Media Library, stay in the tab.
+		$in_library = false !== strpos( (string) wp_get_referer(), 'upload.php' ) || ( isset( $GLOBALS['pagenow'] ) && 'upload.php' === $GLOBALS['pagenow'] );
+		$target     = $in_library ? '' : ' target="_blank" rel="noopener"';
+		$sr         = $in_library ? '' : '<span class="screen-reader-text"> ' . esc_html__( '(opens in a new tab)', 'b61-toolkit' ) . '</span>';
+		$fields['b61_replace'] = array(
+			'label' => __( 'Replace', 'b61-toolkit' ),
+			'input' => 'html',
+			'html'  => '<a class="button" href="' . esc_url( get_edit_post_link( $post->ID ) . '#b61_replace_media' ) . '"' . $target . '>' . esc_html__( 'Replace file…', 'b61-toolkit' ) . $sr . '</a>'
+				. '<p class="description">' . esc_html__( 'Upload a new version; the URL stays the same.', 'b61-toolkit' ) . '</p>',
+		);
+		return $fields;
+	}
+
 	public function form_enctype( $post ) {
 		if ( $post instanceof WP_Post && 'attachment' === $post->post_type ) {
 			echo ' enctype="multipart/form-data"';
@@ -67,7 +88,7 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 
 	public function add_meta_box( $post ) {
 		if ( $this->can_replace( $post->ID ) ) {
-			add_meta_box( 'b61_replace_media', __( 'Replace file', 'b61-toolkit' ), array( $this, 'render_meta_box' ), 'attachment', 'side', 'low' );
+			add_meta_box( 'b61_replace_media', __( 'Replace file', 'b61-toolkit' ), array( $this, 'render_meta_box' ), 'attachment', 'side', 'high' );
 		}
 	}
 

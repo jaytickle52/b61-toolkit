@@ -264,7 +264,9 @@ class B61_Module_Events extends B61_Toolkit_Module {
 	/* ------------------------------------------------------------------ */
 
 	public function add_meta_box() {
-		add_meta_box( 'b61_event_details', __( 'Event Details', 'b61-toolkit' ), array( $this, 'render_meta_box' ), self::POST_TYPE, 'normal', 'high' );
+		// Under the title, above the description, on the classic screen.
+		$context = in_array( self::POST_TYPE, B61_Toolkit_Editor::post_types(), true ) ? B61_Toolkit_Editor::CONTEXT : 'normal';
+		add_meta_box( 'b61_event_details', __( 'Event Details', 'b61-toolkit' ), array( $this, 'render_meta_box' ), self::POST_TYPE, $context, 'high' );
 	}
 
 	public function render_meta_box( $post ) {

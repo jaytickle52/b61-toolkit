@@ -278,7 +278,7 @@ class B61_Toolkit_Transfer {
 		$pending = get_transient( $this->pending_key() );
 		$review  = isset( $_GET['step'] ) && 'review' === $_GET['step'] && is_array( $pending ); // phpcs:ignore WordPress.Security.NonceVerification
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Import / Export', 'b61-toolkit' ); ?></h1>
 			<?php if ( is_array( $msg ) ) : ?>
 				<div class="notice notice-<?php echo esc_attr( $msg[0] ); ?>"><p><?php echo esc_html( $msg[1] ); ?></p></div>
@@ -287,23 +287,27 @@ class B61_Toolkit_Transfer {
 			<?php if ( $review ) : ?>
 				<?php $this->render_review( $pending ); ?>
 			<?php else : ?>
-				<h2><?php esc_html_e( 'Export', 'b61-toolkit' ); ?></h2>
-				<p style="max-width:44em;"><?php esc_html_e( 'Download which features are on and their settings as a file, to set up another site the same way. API keys are not included. Content (people, events, testimonials) is not included — use Tools → Export for that.', 'b61-toolkit' ); ?></p>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="b61_toolkit_export" />
-					<?php wp_nonce_field( 'b61_toolkit_export' ); ?>
-					<?php submit_button( __( 'Download settings file', 'b61-toolkit' ), 'secondary', 'submit', false ); ?>
-				</form>
+				<div class="b61-card">
+					<h3><?php esc_html_e( 'Export', 'b61-toolkit' ); ?></h3>
+					<p class="description"><?php esc_html_e( 'Download which features are on and their settings as a file, to set up another site the same way. API keys are not included. Content (people, events, testimonials) is not included — use Tools → Export for that.', 'b61-toolkit' ); ?></p>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<input type="hidden" name="action" value="b61_toolkit_export" />
+						<?php wp_nonce_field( 'b61_toolkit_export' ); ?>
+						<p><?php submit_button( __( 'Download settings file', 'b61-toolkit' ), 'secondary', 'submit', false ); ?></p>
+					</form>
+				</div>
 
-				<h2 style="margin-top:2em;"><?php esc_html_e( 'Import', 'b61-toolkit' ); ?></h2>
-				<p style="max-width:44em;"><?php esc_html_e( 'Choose a settings file. You will see what it contains and pick what to apply before anything changes.', 'b61-toolkit' ); ?></p>
-				<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="b61_toolkit_import_upload" />
-					<?php wp_nonce_field( 'b61_toolkit_import_upload' ); ?>
-					<p><label for="b61-import-file" class="screen-reader-text"><?php esc_html_e( 'Settings file', 'b61-toolkit' ); ?></label>
-					<input type="file" id="b61-import-file" name="b61_import" accept=".json,application/json" required /></p>
-					<?php submit_button( __( 'Upload and review', 'b61-toolkit' ), 'secondary', 'submit', false ); ?>
-				</form>
+				<div class="b61-card">
+					<h3><?php esc_html_e( 'Import', 'b61-toolkit' ); ?></h3>
+					<p class="description"><?php esc_html_e( 'Choose a settings file. You will see what it contains and pick what to apply before anything changes.', 'b61-toolkit' ); ?></p>
+					<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<input type="hidden" name="action" value="b61_toolkit_import_upload" />
+						<?php wp_nonce_field( 'b61_toolkit_import_upload' ); ?>
+						<p><label for="b61-import-file" class="screen-reader-text"><?php esc_html_e( 'Settings file', 'b61-toolkit' ); ?></label>
+						<input type="file" id="b61-import-file" name="b61_import" accept=".json,application/json" required /></p>
+						<p><?php submit_button( __( 'Upload and review', 'b61-toolkit' ), 'secondary', 'submit', false ); ?></p>
+					</form>
+				</div>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -343,7 +347,7 @@ class B61_Toolkit_Transfer {
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="b61_toolkit_import_apply" />
 			<?php wp_nonce_field( 'b61_toolkit_import_apply' ); ?>
-			<fieldset>
+			<fieldset class="b61-card">
 				<legend class="screen-reader-text"><?php esc_html_e( 'What to import', 'b61-toolkit' ); ?></legend>
 				<?php if ( $data['modules'] ) : ?>
 					<p><label><input type="checkbox" name="b61_sections[]" value="modules" checked /> <strong><?php esc_html_e( 'Features on/off', 'b61-toolkit' ); ?></strong></label><br />

@@ -173,7 +173,7 @@ class B61_Module_Admin_Cleanup extends B61_Toolkit_Module {
 		}
 		$s = self::settings();
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Admin Cleanup', 'b61-toolkit' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( self::OPTION . '_group' ); ?>

@@ -207,7 +207,7 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 		$images = $this->get_candidate_images();
 		$key    = esc_attr( self::OPTION_KEY );
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'AI Alt Text', 'b61-toolkit' ); ?></h1>
 			<p>Generate accessibility-first, SEO-aware alt text for individual images, missing/weak alt text in bulk, or automatically on upload.</p>
 

@@ -1,0 +1,170 @@
+/* Toolkit settings screens. Scoped to .b61-admin so nothing else in wp-admin changes. */
+.b61-admin {
+	--b61-card: #fff;
+	--b61-line: #e2e4e7;
+	--b61-muted: #646970;
+	--b61-accent: var(--wp-admin-theme-color, #2271b1);
+	--b61-radius: 10px;
+	max-width: 920px;
+}
+.b61-admin > h1 {
+	font-size: 26px;
+	font-weight: 600;
+	line-height: 1.3;
+	margin: 8px 0 6px;
+}
+.b61-admin > p,
+.b61-admin > .description,
+.b61-admin form > p.description {
+	color: var(--b61-muted);
+	font-size: 14px;
+	max-width: 44em;
+}
+.b61-admin h2 {
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--b61-muted);
+	margin: 28px 0 8px;
+}
+
+/* Cards: every settings table, plus explicit .b61-card blocks. */
+.b61-admin .form-table,
+.b61-admin .b61-card {
+	display: block;
+	background: var(--b61-card);
+	border: 1px solid var(--b61-line);
+	border-radius: var(--b61-radius);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+	padding: 6px 24px;
+	margin: 12px 0 20px;
+	box-sizing: border-box;
+}
+.b61-admin .b61-card { padding: 20px 24px; }
+.b61-admin .b61-card > :first-child { margin-top: 0; }
+.b61-admin .b61-card > :last-child { margin-bottom: 0; }
+.b61-admin .b61-card h3 { margin: 0 0 6px; font-size: 15px; }
+.b61-admin .form-table > tbody { display: table; width: 100%; }
+.b61-admin .form-table tr + tr > th,
+.b61-admin .form-table tr + tr > td { border-top: 1px solid #f0f0f1; }
+.b61-admin .form-table th {
+	width: 190px;
+	padding: 20px 16px 20px 0;
+	font-weight: 600;
+	color: #1d2327;
+}
+.b61-admin .form-table td { padding: 16px 0; }
+.b61-admin .form-table td p.description,
+.b61-admin .form-table td .description {
+	color: var(--b61-muted);
+	margin-top: 6px;
+}
+.b61-admin .form-table code,
+.b61-admin .b61-card code {
+	background: #f0f0f1;
+	border-radius: 4px;
+	padding: 1px 6px;
+	font-size: 12px;
+	color: #50575e;
+}
+
+/* Fields */
+.b61-admin input[type="text"],
+.b61-admin input[type="email"],
+.b61-admin input[type="url"],
+.b61-admin input[type="number"],
+.b61-admin input[type="password"],
+.b61-admin input[type="datetime-local"],
+.b61-admin select,
+.b61-admin textarea {
+	border: 1px solid #c3c4c7;
+	border-radius: 6px;
+	min-height: 36px;
+	padding: 4px 10px;
+	box-shadow: none;
+}
+.b61-admin select { padding-right: 28px; }
+.b61-admin textarea { padding: 8px 10px; }
+.b61-admin input:focus,
+.b61-admin select:focus,
+.b61-admin textarea:focus {
+	border-color: var(--b61-accent);
+	box-shadow: 0 0 0 1px var(--b61-accent);
+	outline: 2px solid transparent;
+}
+.b61-admin .regular-text { width: 100%; max-width: 28rem; }
+.b61-admin .large-text { max-width: 40rem; }
+.b61-admin .button {
+	border-radius: 6px;
+	min-height: 34px;
+	line-height: 32px;
+	padding: 0 14px;
+}
+.b61-admin .button-primary { font-weight: 500; }
+.b61-admin p.submit { padding: 0; margin: 4px 0 24px; }
+.b61-admin .notice { border-radius: 6px; max-width: 920px; box-sizing: border-box; }
+.b61-admin .wp-picker-container .button { min-height: 30px; line-height: 28px; }
+
+/* Features list */
+.b61-admin .b61-features {
+	border: 1px solid var(--b61-line);
+	border-radius: var(--b61-radius);
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+	max-width: none !important;
+}
+.b61-admin .b61-features thead { display: none; }
+.b61-admin .b61-features tbody tr,
+.b61-admin .b61-features.striped > tbody > :nth-child(odd) { background: #fff; }
+.b61-admin .b61-features tbody tr + tr td { border-top: 1px solid #f0f0f1; }
+.b61-admin .b61-features td { padding: 16px 20px; vertical-align: top; }
+.b61-admin .b61-features td:first-child { width: 52px; padding-right: 0; padding-top: 18px; }
+.b61-admin .b61-features strong { font-size: 14px; }
+.b61-admin .b61-features .description { color: var(--b61-muted); }
+.b61-admin .b61-features label[for] { cursor: pointer; }
+
+/* Toggle switch (still a real checkbox for keyboards and screen readers). */
+.b61-admin .b61-switch {
+	-webkit-appearance: none;
+	appearance: none;
+	position: relative;
+	width: 38px;
+	height: 22px;
+	margin: 0;
+	border: 0;
+	border-radius: 11px;
+	background: #c3c4c7;
+	cursor: pointer;
+	transition: background .15s;
+	box-shadow: none;
+}
+.b61-admin .b61-switch::before {
+	content: "";
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+	transition: transform .15s;
+}
+.b61-admin .b61-switch:checked { background: var(--b61-accent); }
+.b61-admin .b61-switch:checked::before { transform: translateX(16px); }
+.b61-admin .b61-switch:focus-visible { outline: 2px solid var(--b61-accent); outline-offset: 2px; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+	.b61-admin .b61-switch,
+	.b61-admin .b61-switch::before { transition: none; }
+}
+
+.b61-admin .b61-footnote { color: var(--b61-muted); font-size: 12px; margin-top: 16px; }
+
+@media (max-width: 782px) {
+	.b61-admin .form-table,
+	.b61-admin .b61-card { padding: 4px 16px; }
+	.b61-admin .form-table th { padding: 16px 0 0; width: auto; }
+	.b61-admin .form-table tr + tr > td { border-top: 0; }
+}

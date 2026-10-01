@@ -105,7 +105,7 @@ class B61_Module_Login_Page extends B61_Toolkit_Module {
 		$key = self::OPTION;
 		$img = $s['logo_id'] ? wp_get_attachment_image_url( $s['logo_id'], 'medium' ) : '';
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Login Page', 'b61-toolkit' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( self::OPTION . '_group' ); ?>
@@ -213,6 +213,9 @@ class B61_Module_Login_Page extends B61_Toolkit_Module {
 		$css .= '.login .button-primary:hover,.login .button-primary:focus{background:' . $btn . ';border-color:' . $btn . ';color:' . $txt . ';filter:brightness(.92);}';
 		$css .= '.login .button-primary:focus{box-shadow:0 0 0 2px #fff,0 0 0 4px ' . $btn . ';}';
 		$css .= '.login input:focus{border-color:' . $btn . ';box-shadow:0 0 0 1px ' . $btn . ';}';
+		// Softer corners on the form box, button and notices.
+		$css .= '.login form,.login .message,.login .notice,.login #login_error,.login .success{border-radius:8px;}';
+		$css .= '.login .button-primary{border-radius:8px;}';
 		$css .= '.login #nav a,.login #backtoblog a{color:' . self::contrast_text( $bg ) . ';}';
 		if ( $logo ) {
 			$css .= '.login h1 a{background-image:url("' . esc_url( $logo['url'] ) . '");background-size:contain;background-position:center;width:' . (int) $logo['width'] . 'px;height:' . (int) $logo['height'] . 'px;}';

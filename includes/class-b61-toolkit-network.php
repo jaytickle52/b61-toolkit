@@ -78,7 +78,7 @@ class B61_Toolkit_Network {
 		$source   = B61_Module_Alt_Text::key_source();
 		$modules  = $this->toolkit->modules();
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php /* translators: %s: plugin name */ echo esc_html( sprintf( __( '%s — Network', 'b61-toolkit' ), B61_Toolkit::brand( 'name' ) ) ); ?></h1>
 
 			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only. ?>

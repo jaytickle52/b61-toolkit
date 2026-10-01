@@ -99,6 +99,7 @@ class B61_Toolkit {
 		$this->init_active_modules();
 
 		add_action( 'admin_menu', array( $this, 'admin_menu' ), 5 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_styles' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( B61_TOOLKIT_FILE ), array( $this, 'action_links' ) );
 		add_filter( 'option_page_capability_b61_toolkit_modules_group', array( $this, 'capability' ) );
@@ -234,6 +235,14 @@ class B61_Toolkit {
 		}
 	}
 
+	/** Shared look for every Toolkit settings screen (all use page slugs starting "b61-"). */
+	public function admin_styles() {
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- which screen; read-only.
+		if ( 0 === strpos( $page, 'b61-' ) || self::MENU_SLUG === $page ) {
+			wp_enqueue_style( 'b61-toolkit-admin', plugins_url( 'assets/css/admin.css', B61_TOOLKIT_FILE ), array(), B61_TOOLKIT_VERSION );
+		}
+	}
+
 	public function register_settings() {
 		register_setting(
 			'b61_toolkit_modules_group',
@@ -289,38 +298,33 @@ class B61_Toolkit {
 
 		$settings = $this->settings();
 		?>
-		<div class="wrap">
+		<div class="wrap b61-admin">
 			<h1><?php echo esc_html( self::brand( 'name' ) ); ?></h1>
-			<p class="description" style="max-width:44em;">
+			<p>
 				<?php esc_html_e( 'Each feature below is independent. Switch one off and everything it adds — post types, admin screens, generated fields — disappears from the site without touching the content already saved.', 'b61-toolkit' ); ?>
 			</p>
 
 			<form method="post" action="options.php">
 				<?php settings_fields( 'b61_toolkit_modules_group' ); ?>
-				<table class="widefat striped" style="max-width:56em;margin-top:1em;">
-					<thead>
-						<tr>
-							<th style="width:90px;"><?php esc_html_e( 'Enabled', 'b61-toolkit' ); ?></th>
-							<th><?php esc_html_e( 'Feature', 'b61-toolkit' ); ?></th>
-						</tr>
-					</thead>
+				<table class="widefat striped b61-features" role="presentation">
 					<tbody>
 					<?php foreach ( $this->modules as $id => $module ) : ?>
+						<?php $field = 'b61-feature-' . $id; ?>
 						<tr>
-							<td style="vertical-align:top;padding-top:14px;">
-								<label class="b61-toolkit-toggle">
-									<input type="checkbox"
-										name="<?php echo esc_attr( self::MODULES_OPTION ); ?>[<?php echo esc_attr( $id ); ?>]"
-										value="1"
-										<?php checked( ! empty( $settings[ $id ] ) && '1' === (string) $settings[ $id ] ); ?> />
-								</label>
+							<td>
+								<input type="checkbox" class="b61-switch" role="switch"
+									id="<?php echo esc_attr( $field ); ?>"
+									name="<?php echo esc_attr( self::MODULES_OPTION ); ?>[<?php echo esc_attr( $id ); ?>]"
+									value="1"
+									aria-describedby="<?php echo esc_attr( $field ); ?>-desc"
+									<?php checked( ! empty( $settings[ $id ] ) && '1' === (string) $settings[ $id ] ); ?> />
 							</td>
 							<td>
-								<strong><?php echo esc_html( $module->label() ); ?></strong><br />
-								<span class="description"><?php echo esc_html( $module->description() ); ?></span>
+								<label for="<?php echo esc_attr( $field ); ?>"><strong><?php echo esc_html( $module->label() ); ?></strong></label><br />
+								<span class="description" id="<?php echo esc_attr( $field ); ?>-desc"><?php echo esc_html( $module->description() ); ?></span>
 								<?php $note = $module->status_note(); ?>
 								<?php if ( $note ) : ?>
-									<p class="description" style="margin-top:6px;"><?php echo wp_kses_post( $note ); ?></p>
+									<p class="description" style="margin:6px 0 0;"><?php echo wp_kses_post( $note ); ?></p>
 								<?php endif; ?>
 							</td>
 						</tr>
@@ -330,7 +334,7 @@ class B61_Toolkit {
 				<?php submit_button( __( 'Save Features', 'b61-toolkit' ) ); ?>
 			</form>
 
-			<p class="description">
+			<p class="b61-footnote">
 				<?php
 				$updater = function_exists( 'b61_toolkit_updater' ) ? b61_toolkit_updater() : null;
 				if ( $updater && $updater->is_configured() && self::is_white_label() ) {
