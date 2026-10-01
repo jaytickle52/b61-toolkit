@@ -19,6 +19,9 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_toolkit_modules' );
 	delete_option( 'b61_toolkit_people_bio_migrated' );
 	delete_option( 'banner_ai_alt_text_options' );
+	delete_option( 'b61_toolkit_admin_cleanup' );
+	delete_option( 'b61_toolkit_content_order' );
+	delete_option( 'b61_toolkit_login_page' );
 	delete_transient( 'b61_toolkit_flush_rewrites' );
 
 	delete_post_meta_by_key( '_banner_ai_alt_text_generated_at' );

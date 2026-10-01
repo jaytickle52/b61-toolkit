@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: B61 Toolkit
- * Description: Banner 61's modular site toolkit. Each feature (People directory, Testimonials, Events, AI Alt Text, balanced headlines, paragraph orphan control, and more to come) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
- * Version:     1.5.0
+ * Description: Banner 61's modular site toolkit. Each feature (People, Testimonials, Events, content ordering, duplication, media replacement, admin cleanup, login page, email protection, AI alt text and more) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
+ * Version:     1.6.0
  * Author:      Banner 61
  * Text Domain: b61-toolkit
  * Requires at least: 6.0
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'B61_TOOLKIT_VERSION', '1.5.0' );
+define( 'B61_TOOLKIT_VERSION', '1.6.0' );
 define( 'B61_TOOLKIT_FILE', __FILE__ );
 define( 'B61_TOOLKIT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'B61_TOOLKIT_URL', plugin_dir_url( __FILE__ ) );
@@ -38,6 +38,12 @@ require_once B61_TOOLKIT_DIR . 'includes/class-b61-toolkit-network.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-people.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-testimonials.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-events.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-content-order.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-duplicate.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-replace-media.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-admin-cleanup.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-login-page.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-email-protection.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-alt-text.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-line-breaks.php';
 
