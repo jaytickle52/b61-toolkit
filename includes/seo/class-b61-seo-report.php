@@ -114,6 +114,8 @@ class B61_SEO_Report {
 			$out[] = array( 'warning', __( 'Redirects to check', 'b61-toolkit' ), __( 'A redirect should land on a real page in one step.', 'b61-toolkit' ), $chains );
 		}
 
+		$out = array_merge( $out, self::alt_text_findings() );
+
 		$org = array();
 		if ( ! get_theme_mod( 'custom_logo' ) && ! get_option( 'site_icon' ) ) {
 			$org[] = array( __( 'Add a Site Icon (Settings → General) so search engines have your logo', 'b61-toolkit' ), admin_url( 'options-general.php' ) );
@@ -136,6 +138,52 @@ class B61_SEO_Report {
 		}
 
 		return apply_filters( 'b61_seo_report', $out );
+	}
+
+	/** Images with no alt text: by folder when Media Folders is on, otherwise the images themselves. */
+	public static function alt_text_findings() {
+		$total = B61_Module_Alt_Text::missing_alt_count();
+		if ( ! $total ) {
+			return array();
+		}
+		$ai     = b61_toolkit()->is_enabled( 'alt_text' ) && '' !== B61_Module_Alt_Text::key_source();
+		$bulk   = admin_url( 'admin.php?page=' . B61_Module_Alt_Text::PAGE_SLUG );
+		$items  = array();
+		$folders = ( class_exists( 'B61_Module_Media_Folders' ) && b61_toolkit()->is_enabled( 'media_folders' ) ) ? B61_Module_Media_Folders::folders() : array();
+		if ( $folders ) {
+			foreach ( $folders as $f ) {
+				$n = B61_Module_Alt_Text::missing_alt_count( $f[1] );
+				if ( $n ) {
+					$url     = $ai ? add_query_arg( 'folder', $f[1], $bulk ) : admin_url( 'upload.php?mode=list&' . B61_Module_Media_Folders::QUERY_VAR . '=' . rawurlencode( $f[1] ) );
+					/* translators: 1: folder name, 2: number of images */
+					$items[] = array( sprintf( _n( '%1$s — %2$d image', '%1$s — %2$d images', $n, 'b61-toolkit' ), str_repeat( '— ', $f[3] ) . $f[2], $n ), $url );
+				}
+			}
+		}
+		if ( ! $items ) {
+			$q = new WP_Query( B61_Module_Alt_Text::missing_alt_args( '', 25 ) );
+			foreach ( $q->posts as $img ) {
+				$items[] = array( get_the_title( $img ) ? wp_strip_all_tags( get_the_title( $img ) ) : wp_basename( (string) get_attached_file( $img->ID ) ), get_edit_post_link( $img->ID, 'raw' ) );
+			}
+		}
+		$why = __( 'Screen readers announce these as just "image", and image search can\'t tell what they show. Purely decorative images can stay empty.', 'b61-toolkit' );
+		if ( $ai ) {
+			$action = array( __( 'Write alt text with AI', 'b61-toolkit' ), $bulk );
+		} elseif ( b61_toolkit()->is_enabled( 'alt_text' ) ) {
+			$action = array( __( 'Add an OpenAI key to write them automatically', 'b61-toolkit' ), $bulk );
+		} else {
+			$action = null;
+		}
+		return array(
+			array(
+				'warning',
+				__( 'Images without alt text', 'b61-toolkit' ),
+				$why,
+				$items,
+				$action,
+				$total,
+			),
+		);
 	}
 
 	/** Archive and front-page addresses that url_to_postid() can't resolve. */
@@ -172,9 +220,13 @@ class B61_SEO_Report {
 				<div class="b61-card"><p><span class="dashicons dashicons-yes-alt" style="color:#00a32a;" aria-hidden="true"></span> <?php esc_html_e( 'Nothing to fix right now.', 'b61-toolkit' ); ?></p></div>
 			<?php endif; ?>
 			<?php foreach ( $findings as $f ) : ?>
-				<?php list( $sev, $title, $why, $items ) = $f; ?>
+				<?php
+				list( $sev, $title, $why, $items ) = $f;
+				$action                          = $f[4] ?? null;
+				$count                           = $f[5] ?? count( $items );
+				?>
 				<div class="b61-card">
-					<h3><span class="dashicons <?php echo esc_attr( $icons[ $sev ] ); ?>" style="color:<?php echo esc_attr( $colors[ $sev ] ); ?>;" aria-hidden="true"></span> <?php echo esc_html( $title ); ?> <span class="count" style="color:#646970;font-weight:400;">(<?php echo (int) count( $items ); ?>)</span></h3>
+					<h3><span class="dashicons <?php echo esc_attr( $icons[ $sev ] ); ?>" style="color:<?php echo esc_attr( $colors[ $sev ] ); ?>;" aria-hidden="true"></span> <?php echo esc_html( $title ); ?> <span class="count" style="color:#646970;font-weight:400;">(<?php echo (int) $count; ?>)</span></h3>
 					<p class="description"><?php echo esc_html( $why ); ?></p>
 					<ul style="margin:8px 0 0 1.2em;list-style:disc;">
 						<?php foreach ( array_slice( $items, 0, 25 ) as $item ) : ?>
@@ -184,6 +236,9 @@ class B61_SEO_Report {
 							<li><?php echo esc_html( sprintf( /* translators: %d: count */ __( 'and %d more', 'b61-toolkit' ), count( $items ) - 25 ) ); ?></li>
 						<?php endif; ?>
 					</ul>
+					<?php if ( $action ) : ?>
+						<p style="margin-top:12px;"><a class="button" href="<?php echo esc_url( $action[1] ); ?>"><?php echo esc_html( $action[0] ); ?></a></p>
+					<?php endif; ?>
 				</div>
 			<?php endforeach; ?>
 			<p class="b61-footnote">

@@ -243,6 +243,19 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 
 			<hr />
 			<h2>Missing or Weak Alt Text</h2>
+			<?php if ( class_exists( 'B61_Module_Media_Folders' ) && b61_toolkit()->is_enabled( 'media_folders' ) && B61_Module_Media_Folders::folders() ) : ?>
+				<form method="get" style="margin:8px 0;">
+					<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
+					<label for="b61-alt-folder"><?php esc_html_e( 'Folder', 'b61-toolkit' ); ?></label>
+					<select id="b61-alt-folder" name="folder">
+						<option value=""><?php esc_html_e( 'All folders', 'b61-toolkit' ); ?></option>
+						<?php foreach ( B61_Module_Media_Folders::folders() as $f ) : ?>
+							<option value="<?php echo esc_attr( $f[1] ); ?>" <?php selected( self::current_folder(), $f[1] ); ?>><?php echo esc_html( str_repeat( '— ', $f[3] ) . $f[2] ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<?php submit_button( __( 'Show', 'b61-toolkit' ), 'secondary', '', false ); ?>
+				</form>
+			<?php endif; ?>
 			<p><button class="button button-primary" id="banner-ai-bulk">Generate for first <?php echo esc_html( $opts['batch_limit'] ); ?> candidates</button> <span id="banner-ai-status"></span></p>
 			<table class="widefat striped">
 				<thead><tr><th>Image</th><th>Current Alt Text</th><th>Context</th><th>Action</th></tr></thead>
@@ -263,20 +276,68 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 		<?php
 	}
 
-	private function get_candidate_images() {
-		$opts = self::options();
-		$q    = new WP_Query(
-			array(
-				'post_type'      => 'attachment',
-				'post_status'    => 'inherit',
-				'post_mime_type' => 'image',
-				'posts_per_page' => 100,
-				'orderby'        => 'date',
-				'order'          => 'DESC',
-			)
+	/**
+	 * Query args for images with no alt text, optionally inside one media folder.
+	 * Shared with the SEO report.
+	 */
+	public static function missing_alt_args( $folder = '', $limit = 100 ) {
+		$args = array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'post_mime_type' => 'image',
+			'posts_per_page' => $limit,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery
+				'relation' => 'OR',
+				array(
+					'key'     => '_wp_attachment_image_alt',
+					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'key'   => '_wp_attachment_image_alt',
+					'value' => '',
+				),
+			),
 		);
-		return array_values(
-			array_filter(
+		if ( '' !== $folder && class_exists( 'B61_Module_Media_Folders' ) && b61_toolkit()->is_enabled( 'media_folders' ) ) {
+			$args['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery
+				array(
+					'taxonomy' => B61_Module_Media_Folders::taxonomy(),
+					'field'    => 'slug',
+					'terms'    => array( sanitize_title( $folder ) ),
+				),
+			);
+		}
+		return $args;
+	}
+
+	/** Number of images with no alt text (in a folder, or overall). */
+	public static function missing_alt_count( $folder = '' ) {
+		$args                  = self::missing_alt_args( $folder, 1 );
+		$args['fields']        = 'ids';
+		$args['no_found_rows'] = false;
+		$q                     = new WP_Query( $args );
+		return (int) $q->found_posts;
+	}
+
+	private static function current_folder() {
+		return isset( $_GET['folder'] ) ? sanitize_title( wp_unslash( $_GET['folder'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- list filter; read-only.
+	}
+
+	private function get_candidate_images() {
+		$opts   = self::options();
+		$folder = self::current_folder();
+		$args   = self::missing_alt_args( $folder, 100 );
+		if ( '1' === $opts['generate_for_weak'] ) {
+			// Weak alt text can only be judged one image at a time: scan recent images.
+			unset( $args['meta_query'] );
+			$args['posts_per_page'] = 300;
+		}
+		$q = new WP_Query( $args );
+		return array_slice(
+			array_values(
+				array_filter(
 				$q->posts,
 				function ( $p ) use ( $opts ) {
 					$alt = get_post_meta( $p->ID, '_wp_attachment_image_alt', true );
@@ -285,7 +346,10 @@ class B61_Module_Alt_Text extends B61_Toolkit_Module {
 					}
 					return '1' === $opts['generate_for_weak'] && $this->is_weak_alt( $p->ID, $alt );
 				}
-			)
+				)
+			),
+			0,
+			100
 		);
 	}
 

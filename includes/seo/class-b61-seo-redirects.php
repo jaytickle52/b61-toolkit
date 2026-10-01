@@ -93,7 +93,7 @@ class B61_SEO_Redirects {
 	 * @param string $from  Path (or regex when $regex).
 	 * @param string $to    URL or path; ignored for 410.
 	 */
-	public static function add( $from, $to, $type = 301, $regex = false, $id = '' ) {
+	public static function add( $from, $to, $type = 301, $regex = false, $id = '', $post_id = 0 ) {
 		$type = in_array( (int) $type, self::TYPES, true ) ? (int) $type : 301;
 		$from = $regex ? trim( (string) $from ) : self::normalize( $from );
 		if ( '' === $from || '/' === $from && ! $regex ) {
@@ -137,12 +137,18 @@ class B61_SEO_Redirects {
 			}
 		}
 		$id           = '' !== $id ? $id : substr( md5( $from . wp_rand() ), 0, 10 );
+		// The page this rule replaced (set when it was made from the trash prompt),
+		// so the rule can step aside if that page is published again.
+		$post_id      = $post_id ? (int) $post_id : (int) ( $rules[ $id ]['post'] ?? 0 );
 		$rules[ $id ] = array(
 			'from'  => $from,
 			'to'    => $to,
 			'type'  => $type,
 			'regex' => (bool) $regex,
 		);
+		if ( $post_id ) {
+			$rules[ $id ]['post'] = $post_id;
+		}
 		self::store( $rules );
 		self::forget_logged( $regex ? '' : $from );
 		return $id;
