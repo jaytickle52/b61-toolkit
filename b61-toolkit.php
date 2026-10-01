@@ -7,6 +7,7 @@
  * Text Domain: b61-toolkit
  * Requires at least: 6.0
  * Requires PHP: 7.4
+ * Update URI:  https://github.com/banner61/b61-toolkit
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,7 +25,7 @@ define( 'B61_TOOLKIT_URL', plugin_dir_url( __FILE__ ) );
  * the repo is private: use a fine-grained token with read-only Contents access.
  */
 if ( ! defined( 'B61_TOOLKIT_GITHUB_REPO' ) ) {
-	define( 'B61_TOOLKIT_GITHUB_REPO', '' );
+	define( 'B61_TOOLKIT_GITHUB_REPO', 'banner61/b61-toolkit' );
 }
 if ( ! defined( 'B61_TOOLKIT_GITHUB_TOKEN' ) ) {
 	define( 'B61_TOOLKIT_GITHUB_TOKEN', '' );

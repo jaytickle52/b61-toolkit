@@ -37,7 +37,7 @@ if ( is_multisite() ) {
 }
 
 // Cached GitHub release lookups (stored network-wide on multisite).
-$b61_repo = defined( 'B61_TOOLKIT_GITHUB_REPO' ) ? B61_TOOLKIT_GITHUB_REPO : '';
+$b61_repo = defined( 'B61_TOOLKIT_GITHUB_REPO' ) ? B61_TOOLKIT_GITHUB_REPO : 'banner61/b61-toolkit';
 if ( $b61_repo ) {
 	delete_site_transient( 'b61_gh_release_' . md5( trim( $b61_repo, " /\t\n\r" ) ) );
 }
