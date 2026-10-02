@@ -247,7 +247,13 @@ class B61_Module_Admin_Cleanup extends B61_Toolkit_Module {
 	public function remove_help_tabs() {
 		$screen = get_current_screen();
 		if ( $screen ) {
-			$screen->remove_help_tabs();
+			// WordPress's own help only; the Toolkit's how-to guides stay.
+			foreach ( array_keys( $screen->get_help_tabs() ) as $id ) {
+				if ( 'b61-guides' !== $id ) {
+					$screen->remove_help_tab( $id );
+				}
+			}
+			$screen->set_help_sidebar( '' );
 		}
 	}
 

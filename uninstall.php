@@ -28,6 +28,12 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_toolkit_seo' );
 	delete_option( 'b61_toolkit_cache' );
 	delete_option( 'b61_cache_log' );
+	delete_option( 'b61_toolkit_dashboard' );
+	delete_transient( 'b61_help_guides_cache' );
+	delete_transient( 'b61_dash_seo_findings' );
+	delete_option( 'b61_media_usage_state' );
+	delete_option( 'b61_media_usage_option_refs' );
+	wp_clear_scheduled_hook( 'b61_media_usage_index' );
 	delete_option( 'b61_seo_404_log' );
 	delete_option( 'b61_seo_redirect_hits' );
 	delete_transient( 'b61_llms_txt' );
@@ -39,6 +45,8 @@ function b61_toolkit_uninstall_site() {
 
 	delete_post_meta_by_key( '_banner_ai_alt_text_generated_at' );
 	delete_post_meta_by_key( '_banner_ai_alt_text_model' );
+	delete_post_meta_by_key( '_b61_used_in' );
+	delete_post_meta_by_key( '_b61_media_refs' );
 }
 
 if ( is_multisite() ) {

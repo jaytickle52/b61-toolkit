@@ -154,3 +154,10 @@ html.b61-dark #dashboard_right_now .main p, html.b61-dark .community-events .eve
 html.b61-dark #dashboard_right_now li a:before, html.b61-dark #dashboard_right_now li span:before { color: var(--b61d-muted); }
 html.b61-dark #dashboard-widgets .postbox-container .empty-container { outline-color: var(--b61d-line); }
 html.b61-dark #dashboard-widgets .postbox-container .empty-container:after { color: var(--b61d-muted); }
+
+/* Help panel tabs */
+html.b61-dark .contextual-help-tabs .active { background: var(--b61d-surface); border-left-color: var(--b61d-link); }
+html.b61-dark .contextual-help-tabs .active a { color: var(--b61d-text); }
+html.b61-dark .contextual-help-tabs a { color: var(--b61d-link); }
+html.b61-dark .contextual-help-tabs-wrap, html.b61-dark .contextual-help-back { background: var(--b61d-surface); border-color: var(--b61d-line); }
+html.b61-dark #contextual-help-wrap, html.b61-dark #screen-options-wrap { background: var(--b61d-surface-alt); border-color: var(--b61d-line); }

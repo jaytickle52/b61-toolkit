@@ -155,7 +155,7 @@ class B61_Module_Announcement_Bar extends B61_Toolkit_Module {
 	}
 
 	/** Human state for the settings screen: showing / scheduled / ended. */
-	private static function state_label( $s ) {
+	public static function state_label( $s ) {
 		$now   = time();
 		$start = self::timestamp( $s['start'] );
 		$end   = self::timestamp( $s['end'] );

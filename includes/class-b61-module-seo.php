@@ -522,7 +522,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 				$robots['follow'] = true;
 			}
 			unset( $robots['max-image-preview'] );
-		} elseif ( '0' !== get_option( 'blog_public' ) ) {
+		} elseif ( '0' !== (string) get_option( 'blog_public' ) ) {
 			$robots['max-image-preview'] = 'large';
 			$robots['max-snippet']       = '-1';
 		}
@@ -763,7 +763,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 	}
 
 	public function llms_txt( $wp ) {
-		if ( '1' !== self::settings()['llms_txt'] || '0' === get_option( 'blog_public' ) ) {
+		if ( '1' !== self::settings()['llms_txt'] || '0' === (string) get_option( 'blog_public' ) ) {
 			return;
 		}
 		$path = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_parse_url( esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ), PHP_URL_PATH ) : '';
@@ -1063,7 +1063,7 @@ JS;
 					?>
 				</p></div>
 			<?php endif; ?>
-			<?php if ( '0' === get_option( 'blog_public' ) ) : ?>
+			<?php if ( '0' === (string) get_option( 'blog_public' ) ) : ?>
 				<div class="notice notice-error inline"><p><?php echo wp_kses( sprintf( /* translators: %s: settings URL */ __( 'Search engines are blocked for this whole site (<a href="%s">Settings → Reading</a>). That is right for a staging site and wrong for a live one.', 'b61-toolkit' ), esc_url( admin_url( 'options-reading.php' ) ) ), array( 'a' => array( 'href' => true ) ) ); ?></p></div>
 			<?php endif; ?>
 			<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'SEO sections', 'b61-toolkit' ); ?>">

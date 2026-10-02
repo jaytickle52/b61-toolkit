@@ -29,7 +29,7 @@ class B61_SEO_Report {
 	public static function findings() {
 		$out = array();
 
-		if ( '0' === get_option( 'blog_public' ) ) {
+		if ( '0' === (string) get_option( 'blog_public' ) ) {
 			$out[] = array( 'error', __( 'Search engines are blocked for the whole site', 'b61-toolkit' ), __( 'Settings → Reading → "Discourage search engines" is ticked. Fine on a staging site; on a live site no page will appear in Google.', 'b61-toolkit' ), array( array( __( 'Reading settings', 'b61-toolkit' ), admin_url( 'options-reading.php' ) ) ) );
 		}
 		$conflict = B61_Module_SEO::conflict();

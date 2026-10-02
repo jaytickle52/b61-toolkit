@@ -20,8 +20,10 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Organization Details | network "Options Page & Fields" snippet / ACF Global Info (`[b61_details field="…"]`; `[b61_school]` still works) |
 | Announcement Bar | Bulletin Announcements (one scheduled notice bar, closable, no endpoints) |
 | Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
+| Media Usage | — ("Used in" column, attachment details, Used / Not used filter) |
 | SEO | Rank Math / Yoast (titles, descriptions, noindex, canonical, sharing tags, sitemap, schema from Org Details/Events/People, redirects + 404 log, llms.txt, import from both) |
 | Clear Cache | the cache plugins' own "purge" buttons — one admin-bar button for every layer, automatic after updates |
+| Client Dashboard | WordPress's dashboard cards (Needs attention, Your site at a glance, Help & how-to, News) |
 | Admin Theme | — (Banner 61 colours in wp-admin for everyone, rounded controls, per-person light / dark / match-system switch) |
 | AI Alt Text | Alt Magic |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
@@ -53,6 +55,16 @@ It also runs by itself after plugin, theme, translation and WordPress updates (a
 One switch gives the whole dashboard the Banner 61 colours (dark #3F3B4C, light #F0F1EE, text #101827, accent #EE5758) through WordPress's own colour-scheme system — `assets/css/admin-scheme.css` is compiled from core's `colors/_admin.scss` with `assets/css/admin-scheme.scss` (`npx sass`). Every text pair meets WCAG AA: the accent is used as a background with dark text (5.2:1), and a deeper #B24142 is used wherever it would be text on white (5.6:1). Everyone on the site gets the scheme; the per-person picker is hidden.
 
 Each person can pick Light, Dark or Match system from the ☀ / ☾ / ◐ menu in the admin bar. Dark mode covers WordPress's own screens and the Toolkit's; the block editor keeps its light canvas, and other plugins' screens may stay partly light.
+
+## Client Dashboard and help guides
+
+Replaces WordPress's dashboard cards with four of our own. **Needs attention** lists only what the person viewing can fix (search engines blocked, SEO Report findings, removed pages still getting visitors, busy 404s, items awaiting review, missing Org Details). **Your site at a glance** shows the live announcement, the next events and recent edits with who made them. **Help & how-to** lists the guides and how to contact us (Toolkit → Client Dashboard). **News** reads any RSS feed — `https://banner61.com/feed/` by default; point it at a category feed to show only client news.
+
+Guides are written once on banner61.com: switch the module on there and tick *This is the guides site*. That adds **Help Guides** (public at `/help/…`), each with the screens it belongs to, an optional video link and the excerpt as its summary. Every client site reads `https://banner61.com/wp-json/b61/v1/guides` (cached 12 hours), lists the guides on the dashboard and adds a **How-to guides** Help tab on the matching screens. White-labelled installs start with no guides or news address.
+
+## Media Usage
+
+Indexes where each file is used: its address (any size) in content or custom fields — which covers Breakdance pages, templates, headers and footers — image blocks and galleries, featured and SEO share images, the site icon and logo, Breakdance global settings and Toolkit settings. The first index runs in the background in batches of 50; after that each item is re-indexed when saved. "Not used" means nothing on this site points at the file; a file linked from an email or another website will still show, so there is a filter to review them but no bulk delete. Extra ID fields can be added with the `b61_media_usage_id_meta` filter.
 
 ## Copying settings between sites
 
