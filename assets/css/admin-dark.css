@@ -1,0 +1,156 @@
+/*
+ * Dark mode for wp-admin (Admin Theme module). Applied with html.b61-dark,
+ * which a tiny script in <head> sets from the user's Light / Dark / Auto
+ * choice before the page paints. Not loaded in the block editor, which keeps
+ * WordPress's own light editing canvas.
+ *
+ * Palette (contrast on #2A2733 surface): text #F0F1EE 12.9:1, muted #C9C6D3
+ * 8.7:1, links #F39192 6.5:1, borders #8C8799 4.2:1, accent #EE5758 4.3:1.
+ */
+html.b61-dark {
+	--b61d-bg: #1C1A23;
+	--b61d-surface: #2A2733;
+	--b61d-surface-alt: #24212D;
+	--b61d-line: #3F3B4C;
+	--b61d-field-line: #8C8799;
+	--b61d-text: #F0F1EE;
+	--b61d-muted: #C9C6D3;
+	--b61d-link: #F39192;
+	--b61d-link-hover: #F6ABAB;
+	color-scheme: dark;
+	background: var(--b61d-bg);
+}
+
+html.b61-dark body,
+html.b61-dark #wpwrap,
+html.b61-dark #wpcontent,
+html.b61-dark #wpbody,
+html.b61-dark #wpbody-content {
+	background: var(--b61d-bg);
+	color: var(--b61d-text);
+}
+
+/* Text */
+html.b61-dark h1, html.b61-dark h2, html.b61-dark h3, html.b61-dark h4, html.b61-dark h5, html.b61-dark h6,
+html.b61-dark .wrap h1, html.b61-dark .wrap h2,
+html.b61-dark label, html.b61-dark legend, html.b61-dark th, html.b61-dark td, html.b61-dark p, html.b61-dark li, html.b61-dark dt, html.b61-dark dd,
+html.b61-dark .form-table th, html.b61-dark .widefat td, html.b61-dark .widefat th, html.b61-dark .widefat thead th, html.b61-dark .widefat tfoot th,
+html.b61-dark .row-title, html.b61-dark .postbox .hndle, html.b61-dark .postbox h2, html.b61-dark .inside,
+html.b61-dark .wp-list-table .column-title strong, html.b61-dark .plugin-title strong, html.b61-dark .theme-name,
+html.b61-dark #dashboard-widgets h3, html.b61-dark .welcome-panel h2, html.b61-dark .welcome-panel h3 {
+	color: var(--b61d-text);
+}
+html.b61-dark .description, html.b61-dark p.description, html.b61-dark .howto, html.b61-dark .subsubsub, html.b61-dark .count,
+html.b61-dark #wpfooter, html.b61-dark #wpfooter p, html.b61-dark .post-com-count-wrapper, html.b61-dark .row-actions span,
+html.b61-dark .wp-list-table .column-date, html.b61-dark .displaying-num, html.b61-dark .tablenav .tablenav-pages {
+	color: var(--b61d-muted);
+}
+
+/* Links */
+html.b61-dark a, html.b61-dark .row-actions a, html.b61-dark .subsubsub a, html.b61-dark .wp-list-table a.row-title,
+html.b61-dark .button-link, html.b61-dark #wpfooter a {
+	color: var(--b61d-link);
+}
+html.b61-dark a:hover, html.b61-dark a:focus, html.b61-dark .button-link:hover {
+	color: var(--b61d-link-hover);
+}
+html.b61-dark .row-actions .trash a, html.b61-dark .row-actions .delete a, html.b61-dark .submitdelete, html.b61-dark a.submitdelete {
+	color: #FF9B9B;
+}
+html.b61-dark .subsubsub a.current { color: var(--b61d-text); }
+
+/* Surfaces */
+html.b61-dark .postbox, html.b61-dark .card, html.b61-dark .welcome-panel, html.b61-dark .stuffbox,
+html.b61-dark .widefat, html.b61-dark .wp-list-table, html.b61-dark .notice, html.b61-dark div.updated, html.b61-dark div.error,
+html.b61-dark #screen-meta, html.b61-dark #screen-meta-links .show-settings, html.b61-dark .contextual-help-tabs-wrap,
+html.b61-dark .health-check-body .health-check-accordion, html.b61-dark .site-health-progress-wrapper,
+html.b61-dark .tablenav .tablenav-pages a, html.b61-dark .plugin-card, html.b61-dark .plugin-card-bottom,
+html.b61-dark .theme-browser .theme, html.b61-dark .attachments-browser .media-toolbar, html.b61-dark .media-frame-content,
+html.b61-dark .media-modal-content, html.b61-dark .media-frame-title, html.b61-dark .media-frame-router, html.b61-dark .media-frame-toolbar .media-toolbar,
+html.b61-dark .media-sidebar, html.b61-dark .attachment-details, html.b61-dark .upload-ui, html.b61-dark .uploader-inline,
+html.b61-dark .wp-filter, html.b61-dark .feature-filter, html.b61-dark .edit-tag-actions, html.b61-dark #titlediv #title,
+html.b61-dark .wp-editor-container, html.b61-dark .quicktags-toolbar, html.b61-dark #post-status-info,
+html.b61-dark .b61-trash-notice {
+	background: var(--b61d-surface);
+	border-color: var(--b61d-line);
+	color: var(--b61d-text);
+}
+html.b61-dark .postbox .postbox-header, html.b61-dark .widefat thead th, html.b61-dark .widefat thead td,
+html.b61-dark .widefat tfoot th, html.b61-dark .widefat tfoot td, html.b61-dark .widefat td, html.b61-dark .widefat th,
+html.b61-dark .media-frame-content, html.b61-dark #major-publishing-actions, html.b61-dark .misc-pub-section {
+	border-color: var(--b61d-line);
+}
+html.b61-dark #major-publishing-actions { background: var(--b61d-surface-alt); }
+html.b61-dark .striped > tbody > :nth-child(odd), html.b61-dark ul.striped > :nth-child(odd), html.b61-dark .alternate,
+html.b61-dark .plugins .inactive td, html.b61-dark .plugins .inactive th {
+	background-color: var(--b61d-surface-alt);
+}
+html.b61-dark .plugins .active td, html.b61-dark .plugins .active th, html.b61-dark .plugins tr.active + tr.plugin-update-tr .plugin-update {
+	background-color: var(--b61d-surface);
+}
+html.b61-dark .plugin-update-tr .update-message, html.b61-dark .update-message p { background: transparent; color: var(--b61d-text); }
+
+html.b61-dark .widefat thead th, html.b61-dark .widefat thead td, html.b61-dark .widefat tfoot th, html.b61-dark .widefat tfoot td,
+html.b61-dark .plugins thead th, html.b61-dark .plugins tfoot th { background: var(--b61d-surface); }
+html.b61-dark .welcome-panel, html.b61-dark .welcome-panel-content, html.b61-dark .welcome-panel-column-container,
+html.b61-dark .welcome-panel-column, html.b61-dark .welcome-panel-header { background: var(--b61d-surface); color: var(--b61d-text); }
+html.b61-dark .welcome-panel-header-image { opacity: .85; }
+html.b61-dark .subsubsub a .count, html.b61-dark .subsubsub a.current .count { color: var(--b61d-muted); }
+
+/* Tabs */
+html.b61-dark .nav-tab { background: var(--b61d-surface-alt); border-color: var(--b61d-line); color: var(--b61d-muted); }
+html.b61-dark .nav-tab:hover { background: var(--b61d-surface); color: var(--b61d-text); }
+html.b61-dark .nav-tab-active, html.b61-dark .nav-tab-active:hover, html.b61-dark .nav-tab-active:focus { background: var(--b61d-bg); border-bottom-color: var(--b61d-bg); color: var(--b61d-text); }
+html.b61-dark .nav-tab-wrapper, html.b61-dark .wrap h2.nav-tab-wrapper { border-bottom-color: var(--b61d-line); }
+
+/* Fields */
+html.b61-dark input[type="text"], html.b61-dark input[type="search"], html.b61-dark input[type="email"], html.b61-dark input[type="url"],
+html.b61-dark input[type="password"], html.b61-dark input[type="number"], html.b61-dark input[type="tel"], html.b61-dark input[type="date"],
+html.b61-dark input[type="datetime-local"], html.b61-dark input[type="time"], html.b61-dark select, html.b61-dark textarea,
+html.b61-dark .wp-core-ui select {
+	background-color: var(--b61d-bg);
+	color: var(--b61d-text);
+	border-color: var(--b61d-field-line);
+}
+html.b61-dark input::placeholder, html.b61-dark textarea::placeholder { color: #A9A5B5; }
+html.b61-dark input[type="checkbox"]:not(.b61-switch), html.b61-dark input[type="radio"] { background: var(--b61d-bg); border-color: var(--b61d-field-line); }
+html.b61-dark input[type="checkbox"]:not(.b61-switch):checked::before { filter: invert(1) brightness(1.4); }
+html.b61-dark .b61-admin .b61-switch:not(:checked) { background: #6B6679; }
+html.b61-dark input:disabled, html.b61-dark select:disabled, html.b61-dark textarea:disabled { background: var(--b61d-surface-alt); color: #8C8799; }
+
+/* Buttons: primary keeps the accent with dark text (5.2:1); secondary goes light-on-dark. */
+html.b61-dark .wp-core-ui .button:not(.button-primary), html.b61-dark .wp-core-ui .button-secondary, html.b61-dark .wrap .page-title-action {
+	background: var(--b61d-surface);
+	color: var(--b61d-link);
+	border-color: var(--b61d-link);
+}
+html.b61-dark .wp-core-ui .button:not(.button-primary):hover, html.b61-dark .wp-core-ui .button-secondary:hover, html.b61-dark .wrap .page-title-action:hover {
+	background: var(--b61d-line);
+	color: var(--b61d-link-hover);
+	border-color: var(--b61d-link-hover);
+}
+html.b61-dark .wp-core-ui .button-primary { color: #101827; }
+html.b61-dark .wp-core-ui .button[disabled], html.b61-dark .wp-core-ui .button:disabled { background: var(--b61d-surface-alt) !important; color: #8C8799 !important; border-color: var(--b61d-line) !important; }
+
+/* Code */
+html.b61-dark code, html.b61-dark kbd, html.b61-dark pre { background: rgba(255, 255, 255, .08); color: var(--b61d-text); }
+
+/* Toolkit screens follow along */
+html.b61-dark .b61-admin { --b61-card: var(--b61d-surface); --b61-line: var(--b61d-line); --b61-muted: var(--b61d-muted); }
+html.b61-dark .b61-admin .form-table tr + tr > th, html.b61-dark .b61-admin .form-table tr + tr > td,
+html.b61-dark .b61-admin .b61-features tbody tr + tr td { border-top-color: var(--b61d-line); }
+html.b61-dark .b61-admin .b61-features tbody tr, html.b61-dark .b61-admin .b61-features.striped > tbody > :nth-child(odd) { background: var(--b61d-surface); }
+html.b61-dark .b61-admin .form-table th { color: var(--b61d-text); }
+html.b61-dark .b61-admin .form-table code, html.b61-dark .b61-admin .b61-card code { background: rgba(255, 255, 255, .08); color: var(--b61d-muted); }
+html.b61-dark .b61-seo-preview { background: var(--b61d-surface); border-color: var(--b61d-line); }
+html.b61-dark .b61-seo-preview__title { color: #9DB5FF; }
+html.b61-dark .b61-seo-preview__url, html.b61-dark .b61-seo-preview__desc { color: var(--b61d-muted); }
+
+/* Dashboard widgets */
+html.b61-dark #dashboard-widgets .drafts h2, html.b61-dark #dashboard-widgets h2, html.b61-dark #dashboard_right_now li a,
+html.b61-dark #dashboard_activity h3, html.b61-dark .community-events li, html.b61-dark .rss-widget a.rsswidget { color: var(--b61d-text); }
+html.b61-dark #dashboard-widgets time, html.b61-dark #dashboard_activity .activity-block span, html.b61-dark .rss-date,
+html.b61-dark #dashboard_right_now .main p, html.b61-dark .community-events .event-date { color: var(--b61d-muted); }
+html.b61-dark #dashboard_right_now li a:before, html.b61-dark #dashboard_right_now li span:before { color: var(--b61d-muted); }
+html.b61-dark #dashboard-widgets .postbox-container .empty-container { outline-color: var(--b61d-line); }
+html.b61-dark #dashboard-widgets .postbox-container .empty-container:after { color: var(--b61d-muted); }

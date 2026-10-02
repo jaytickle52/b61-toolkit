@@ -22,6 +22,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
 | SEO | Rank Math / Yoast (titles, descriptions, noindex, canonical, sharing tags, sitemap, schema from Org Details/Events/People, redirects + 404 log, llms.txt, import from both) |
 | Clear Cache | the cache plugins' own "purge" buttons — one admin-bar button for every layer, automatic after updates |
+| Admin Theme | — (Banner 61 colours in wp-admin for everyone, rounded controls, per-person light / dark / match-system switch) |
 | AI Alt Text | Alt Magic |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
 
@@ -46,6 +47,12 @@ People, Testimonials and Events all use the classic edit screen, with their fiel
 "Clear cache" in the admin bar (editors and admins by default) asks every caching layer on the site to clear itself: Breakdance and Elementor CSS, WP Rocket, LiteSpeed, W3 Total Cache, WP Super Cache, WP Fastest Cache, Breeze/Varnish (Cloudways), SiteGround, Nginx Helper, Cache Enabler, Hummingbird, Autoptimize, Kinsta, WP Engine, Pantheon, Cloudflare (with a Cache Purge token), WordPress's object cache (single sites only) and the Toolkit's own saved copies. On a page, "Clear this page only" clears just that page where the cache allows it.
 
 It also runs by itself after plugin, theme, translation and WordPress updates (automatic ones included) and after saving Toolkit settings visitors see. The last ten clears are listed under B61 Toolkit → Clear Cache.
+
+## Admin Theme
+
+One switch gives the whole dashboard the Banner 61 colours (dark #3F3B4C, light #F0F1EE, text #101827, accent #EE5758) through WordPress's own colour-scheme system — `assets/css/admin-scheme.css` is compiled from core's `colors/_admin.scss` with `assets/css/admin-scheme.scss` (`npx sass`). Every text pair meets WCAG AA: the accent is used as a background with dark text (5.2:1), and a deeper #B24142 is used wherever it would be text on white (5.6:1). Everyone on the site gets the scheme; the per-person picker is hidden.
+
+Each person can pick Light, Dark or Match system from the ☀ / ☾ / ◐ menu in the admin bar. Dark mode covers WordPress's own screens and the Toolkit's; the block editor keeps its light canvas, and other plugins' screens may stay partly light.
 
 ## Copying settings between sites
 

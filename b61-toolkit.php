@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name: B61 Toolkit
- * Description: Modular site toolkit. Each feature (People, Testimonials, Events, content ordering, duplication, media replacement, admin cleanup, login page, email protection, password pages, calendar feeds, organization details, announcement bar, media folders, SEO, cache clearing, AI alt text and more) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
+ * Description: Modular site toolkit. Each feature (People, Testimonials, Events, content ordering, duplication, media replacement, admin cleanup, login page, email protection, password pages, calendar feeds, organization details, announcement bar, media folders, SEO, cache clearing, admin theme, AI alt text and more) is switched on per site under B61 Toolkit → Features. Updates are delivered from GitHub.
  * License:     GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Version:     1.14.0
+ * Version:     1.15.0
  * Author:      Banner 61
  * Text Domain: b61-toolkit
  * Requires at least: 6.0
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'B61_TOOLKIT_VERSION', '1.14.0' );
+define( 'B61_TOOLKIT_VERSION', '1.15.0' );
 define( 'B61_TOOLKIT_FILE', __FILE__ );
 define( 'B61_TOOLKIT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'B61_TOOLKIT_URL', plugin_dir_url( __FILE__ ) );
@@ -55,6 +55,7 @@ require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-announcement-bar.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-media-folders.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-seo.php';
 require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-clear-cache.php';
+require_once B61_TOOLKIT_DIR . 'includes/class-b61-module-admin-theme.php';
 require_once B61_TOOLKIT_DIR . 'includes/seo/class-b61-seo-schema.php';
 require_once B61_TOOLKIT_DIR . 'includes/seo/class-b61-seo-redirects.php';
 require_once B61_TOOLKIT_DIR . 'includes/seo/class-b61-seo-import.php';

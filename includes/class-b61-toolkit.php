@@ -46,7 +46,7 @@ class B61_Toolkit {
 				'name'       => $name,
 				'menu'       => $c( 'B61_TOOLKIT_BRAND_MENU', $name ),
 				'author'     => $c( 'B61_TOOLKIT_BRAND_AUTHOR', 'Banner 61' ),
-				'author_uri' => $c( 'B61_TOOLKIT_BRAND_AUTHOR_URI', '' ),
+				'author_uri' => $c( 'B61_TOOLKIT_BRAND_AUTHOR_URI', defined( 'B61_TOOLKIT_BRAND_AUTHOR' ) ? '' : 'https://banner61.com' ),
 				'icon'       => $c( 'B61_TOOLKIT_BRAND_ICON', 'dashicons-screenoptions' ),
 				'elements'   => $c( 'B61_TOOLKIT_BRAND_ELEMENTS', 'Banner 61 Elements' ),
 			)
@@ -139,6 +139,7 @@ class B61_Toolkit {
 			new B61_Module_School_Details(),
 			new B61_Module_SEO(),
 			new B61_Module_Clear_Cache(),
+			new B61_Module_Admin_Theme(),
 			new B61_Module_Announcement_Bar(),
 			new B61_Module_Media_Folders(),
 			new B61_Module_Alt_Text(),

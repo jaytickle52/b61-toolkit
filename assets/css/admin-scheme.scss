@@ -1,0 +1,67 @@
+@use "sass:color";
+
+$scheme-name: "banner61";
+$base-color: #3F3B4C;
+$text-color: #F0F1EE;
+$icon-color: #C9C6D3;
+$highlight-color: #EE5758;
+$notification-color: #EE5758;
+
+$body-background: #F0F1EE;
+$link: #B24142;
+$link-focus: #8E3435;
+$button-color: #EE5758;
+$button-text-color: #101827;
+$form-checked: #3F3B4C;
+
+$menu-highlight-text: #101827;
+$menu-highlight-icon: #101827;
+$menu-submenu-text: #C9C6D3;
+$menu-submenu-background: #2F2C39;
+$menu-submenu-focus-text: #F39192;
+$menu-submenu-current-text: #F0F1EE;
+$menu-bubble-text: #101827;
+$menu-bubble-current-text: #F0F1EE;
+$menu-bubble-current-background: #101827;
+$menu-collapse-focus-text: #F0F1EE;
+$adminbar-recovery-exit-text: #101827;
+
+@import "../_admin.scss";
+
+/* Accessibility: the accent (#EE5758) is 3.4:1 on white — fine for borders and
+   icons, too light for text. Text-coloured uses switch to the deeper shade. */
+.wp-core-ui .button:not(.button-primary),
+.wp-core-ui .button-secondary,
+.wrap .page-title-action,
+.wrap .page-title-action:active,
+.wp-core-ui .wp-ui-text-highlight {
+	color: #B24142;
+	border-color: #B24142;
+}
+.wp-core-ui .button:not(.button-primary):hover,
+.wp-core-ui .button-secondary:hover,
+.wrap .page-title-action:hover {
+	color: #8E3435;
+	border-color: #8E3435;
+	background: #fff;
+}
+/* Primary buttons: brand accent with dark text (5.2:1); lighter on hover (6.5:1). */
+.wp-core-ui .button-primary,
+.wp-core-ui .button-primary:focus,
+.wp-core-ui .button-primary:active,
+.wp-core-ui .button-primary.active {
+	color: #101827;
+	background: #EE5758;
+	border-color: #EE5758;
+}
+.wp-core-ui .button-primary:hover {
+	color: #101827;
+	background: #F17879;
+	border-color: #F17879;
+}
+.wp-core-ui .button-primary[disabled],
+.wp-core-ui .button-primary:disabled {
+	color: #646970 !important;
+	background: #DCDCDE !important;
+	border-color: #DCDCDE !important;
+}
