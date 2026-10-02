@@ -21,6 +21,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Announcement Bar | Bulletin Announcements (one scheduled notice bar, closable, no endpoints) |
 | Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
 | SEO | Rank Math / Yoast (titles, descriptions, noindex, canonical, sharing tags, sitemap, schema from Org Details/Events/People, redirects + 404 log, llms.txt, import from both) |
+| Clear Cache | the cache plugins' own "purge" buttons — one admin-bar button for every layer, automatic after updates |
 | AI Alt Text | Alt Magic |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
 
@@ -33,12 +34,18 @@ Switch on **SEO** in Features. Every content type with public pages gets a **Sea
 - **Removing a page**: trash a published page and a notice offers to redirect its old address (to its parent page, its section, or the home page). If the page is published again, that redirect removes itself.
 - **SEO Report**: a short list of things to fix (site blocked from search, hidden pages, missing descriptions, long or duplicate titles, images without alt text — by media folder, with a button to the AI Alt Text bulk tool — redirect chains, missing org details).
 - Structured data comes from Org Details (name, logo, phone, address, social links), Events (dates, times, location), People (name, job title — never email or phone) and breadcrumbs.
-- WordPress's own sitemap (`/wp-sitemap.xml`) is used, minus hidden pages and types without public pages; `/llms.txt` summarises the site for AI search tools.
+- **Sitemap & robots.txt** tab: switch each content type and taxonomy in or out of WordPress's own sitemap (`/wp-sitemap.xml`; hidden pages are always left out), add extra robots.txt rules, and see the robots.txt being served. `/llms.txt` summarises the site for AI search tools.
 - While Rank Math, Yoast, AIOSEO, SEOPress, The SEO Framework, Slim SEO or Squirrly is active, the module prints nothing in the page head — import first, check the report, then deactivate the old plugin.
 
 ## Editing screens
 
 People, Testimonials and Events all use the classic edit screen, with their fields right under the title. The generic "Custom Fields" box is hidden, and so is "Page Attributes" when Content Order handles that type's order (the data behind both is kept). Developers can add types with the `b61_toolkit_editor_post_types` filter.
+
+## Clear Cache
+
+"Clear cache" in the admin bar (editors and admins by default) asks every caching layer on the site to clear itself: Breakdance and Elementor CSS, WP Rocket, LiteSpeed, W3 Total Cache, WP Super Cache, WP Fastest Cache, Breeze/Varnish (Cloudways), SiteGround, Nginx Helper, Cache Enabler, Hummingbird, Autoptimize, Kinsta, WP Engine, Pantheon, Cloudflare (with a Cache Purge token), WordPress's object cache (single sites only) and the Toolkit's own saved copies. On a page, "Clear this page only" clears just that page where the cache allows it.
+
+It also runs by itself after plugin, theme, translation and WordPress updates (automatic ones included) and after saving Toolkit settings visitors see. The last ten clears are listed under B61 Toolkit → Clear Cache.
 
 ## Copying settings between sites
 

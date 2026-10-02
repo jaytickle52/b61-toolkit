@@ -26,6 +26,8 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_toolkit_announcement' );
 	delete_option( 'b61_toolkit_media_folders' );
 	delete_option( 'b61_toolkit_seo' );
+	delete_option( 'b61_toolkit_cache' );
+	delete_option( 'b61_cache_log' );
 	delete_option( 'b61_seo_404_log' );
 	delete_option( 'b61_seo_redirect_hits' );
 	delete_transient( 'b61_llms_txt' );

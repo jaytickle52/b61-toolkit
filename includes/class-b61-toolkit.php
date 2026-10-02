@@ -138,6 +138,7 @@ class B61_Toolkit {
 			new B61_Module_Calendar(),
 			new B61_Module_School_Details(),
 			new B61_Module_SEO(),
+			new B61_Module_Clear_Cache(),
 			new B61_Module_Announcement_Bar(),
 			new B61_Module_Media_Folders(),
 			new B61_Module_Alt_Text(),

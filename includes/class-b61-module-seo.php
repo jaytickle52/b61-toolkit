@@ -76,6 +76,8 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 			'log_404'            => '1',
 			'templates'          => array(),
 			'hidden_types'       => array(),
+			'sitemap_exclude'    => array(),
+			'robots_extra'       => '',
 		);
 	}
 
@@ -83,6 +85,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		$s = wp_parse_args( (array) get_option( self::OPTION, array() ), self::defaults() );
 		$s['templates']    = is_array( $s['templates'] ) ? $s['templates'] : array();
 		$s['hidden_types'] = is_array( $s['hidden_types'] ) ? $s['hidden_types'] : array();
+		$s['sitemap_exclude'] = is_array( $s['sitemap_exclude'] ) ? $s['sitemap_exclude'] : array();
 		return $s;
 	}
 
@@ -169,7 +172,59 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 			'log_404'             => $flag( 'log_404' ),
 			'templates'           => $templates,
 			'hidden_types'        => array_values( array_intersect( array_map( 'sanitize_key', (array) ( $input['hidden_types'] ?? array() ) ), array_keys( self::post_types() ) ) ),
+			'sitemap_exclude'     => self::clean_sitemap_exclude( $input ),
+			'robots_extra'        => self::clean_robots( (string) ( $input['robots_extra'] ?? '' ) ),
 		);
+	}
+
+	/**
+	 * The sitemap form lists every entry as a switch; switched-off ones are
+	 * stored as "pt:page" / "tax:category" exclusions.
+	 */
+	private static function clean_sitemap_exclude( $input ) {
+		if ( isset( $input['sitemap_shown'] ) ) {
+			$shown = array_map( 'sanitize_text_field', (array) $input['sitemap_shown'] );
+			$on    = array_map( 'sanitize_text_field', (array) ( $input['sitemap_include'] ?? array() ) );
+			// Entries not on the form (greyed out) keep their earlier choice.
+			$kept = array_diff( self::settings()['sitemap_exclude'], $shown );
+			return array_values( array_unique( array_merge( $kept, array_diff( $shown, $on ) ) ) );
+		}
+		$out = array();
+		foreach ( (array) ( $input['sitemap_exclude'] ?? array() ) as $item ) {
+			if ( preg_match( '/^(pt|tax):[a-z0-9_\-]+$/', (string) $item ) ) {
+				$out[] = (string) $item;
+			}
+		}
+		return array_values( array_unique( $out ) );
+	}
+
+	/** Extra robots.txt lines: plain "Field: value" directives and comments only. */
+	public static function clean_robots( $text ) {
+		$lines = array();
+		foreach ( preg_split( '/\r\n|\r|\n/', wp_strip_all_tags( $text ) ) as $line ) {
+			$line = trim( $line );
+			if ( '' === $line || preg_match( '/^#/', $line ) || preg_match( '/^[A-Za-z][A-Za-z\-]*\s*:\s*\S*/', $line ) ) {
+				$lines[] = mb_substr( $line, 0, 300 );
+			}
+		}
+		$text = implode( "\n", array_slice( $lines, 0, 100 ) );
+		return trim( preg_replace( "/\n{3,}/", "\n\n", $text ) );
+	}
+
+	/** Taxonomies with public archive pages worth listing. */
+	public static function sitemap_taxonomy_list() {
+		$out = array();
+		foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $name => $tax ) {
+			if ( in_array( $name, array( 'post_format', 'b61_person_group', 'b61_testimonial_group' ), true ) || ! $tax->publicly_queryable ) {
+				continue;
+			}
+			$out[ $name ] = $tax->labels->name;
+		}
+		return $out;
+	}
+
+	public static function in_sitemap( $kind, $name ) {
+		return ! in_array( $kind . ':' . $name, self::settings()['sitemap_exclude'], true );
 	}
 
 	/** Another SEO plugin is active: stay out of the page head. */
@@ -215,6 +270,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		add_filter( 'wp_sitemaps_posts_query_args', array( $this, 'sitemap_query' ), 10, 2 );
 		add_filter( 'wp_sitemaps_add_provider', array( $this, 'sitemap_providers' ), 10, 2 );
 		add_filter( 'wp_sitemaps_taxonomies', array( $this, 'sitemap_taxonomies' ) );
+		add_filter( 'robots_txt', array( $this, 'robots_txt' ), 20, 2 );
 
 		add_action( 'parse_request', array( $this, 'llms_txt' ), 1 );
 		add_action( 'save_post', array( __CLASS__, 'flush_llms' ) );
@@ -567,7 +623,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 	public function sitemap_post_types( $types ) {
 		$allowed = self::post_types();
 		foreach ( array_keys( $types ) as $name ) {
-			if ( ! isset( $allowed[ $name ] ) || self::type_hidden( $name ) ) {
+			if ( ! isset( $allowed[ $name ] ) || self::type_hidden( $name ) || ! self::in_sitemap( 'pt', $name ) ) {
 				unset( $types[ $name ] );
 			}
 		}
@@ -612,7 +668,38 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		}
 		// Taxonomies that only exist to group Toolkit content have no useful pages.
 		unset( $taxonomies['b61_person_group'], $taxonomies['b61_testimonial_group'], $taxonomies['post_format'] );
+		foreach ( array_keys( $taxonomies ) as $name ) {
+			if ( ! self::in_sitemap( 'tax', $name ) ) {
+				unset( $taxonomies[ $name ] );
+			}
+		}
 		return $taxonomies;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* robots.txt (WordPress's own, virtual)                               */
+	/* ------------------------------------------------------------------ */
+
+	public function robots_txt( $output, $public ) {
+		$extra = self::settings()['robots_extra'];
+		if ( $public && '' !== $extra && ! self::conflict() ) {
+			$output = rtrim( $output ) . "\n\n# " . B61_Toolkit::brand( 'name' ) . "\n" . $extra . "\n";
+		}
+		return $output;
+	}
+
+	/** What /robots.txt serves right now (as WordPress builds it). */
+	public static function robots_preview() {
+		$public = (bool) get_option( 'blog_public' );
+		$base   = "User-agent: *\n";
+		if ( $public ) {
+			$path  = (string) wp_parse_url( site_url(), PHP_URL_PATH );
+			$base .= 'Disallow: ' . $path . "/wp-admin/\n";
+			$base .= 'Allow: ' . $path . "/wp-admin/admin-ajax.php\n";
+		} else {
+			$base .= "Disallow: /\n";
+		}
+		return apply_filters( 'robots_txt', $base, $public ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core hook.
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -961,6 +1048,7 @@ JS;
 		$tabs  = array(
 			'general' => __( 'General', 'b61-toolkit' ),
 			'content' => __( 'Content types', 'b61-toolkit' ),
+			'sitemap' => __( 'Sitemap & robots.txt', 'b61-toolkit' ),
 			'import'  => __( 'Import', 'b61-toolkit' ),
 		);
 		$tab   = isset( $tabs[ $tab ] ) ? $tab : 'general';
@@ -991,7 +1079,7 @@ JS;
 				<?php settings_fields( self::OPTION . '_group' ); ?>
 				<?php
 				// The form saves the whole option, so carry the other tab's values along.
-				$this->hidden_fields( $s, 'general' === $tab ? 'content' : 'general' );
+				$this->hidden_fields( $s, $tab );
 				?>
 				<?php if ( 'general' === $tab ) : ?>
 					<h2><?php esc_html_e( 'Home page', 'b61-toolkit' ); ?></h2>
@@ -1068,6 +1156,8 @@ JS;
 								<p class="description"><a href="<?php echo esc_url( home_url( '/llms.txt' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'View llms.txt', 'b61-toolkit' ); ?><span class="screen-reader-text"> <?php esc_html_e( '(opens in a new tab)', 'b61-toolkit' ); ?></span></a> · <a href="<?php echo esc_url( home_url( '/wp-sitemap.xml' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'View sitemap', 'b61-toolkit' ); ?><span class="screen-reader-text"> <?php esc_html_e( '(opens in a new tab)', 'b61-toolkit' ); ?></span></a></p>
 							<?php endif; ?></td></tr>
 					</table>
+				<?php elseif ( 'sitemap' === $tab ) : ?>
+					<?php $this->render_sitemap_tab( $s ); ?>
 				<?php else : ?>
 					<p><?php echo esc_html( sprintf( /* translators: 1-3: placeholder names such as %title% */ __( 'How each kind of page is titled in search results, unless a page sets its own title. %1$s is the page title, %2$s the separator, %3$s the site name.', 'b61-toolkit' ), '%title%', '%sep%', '%sitename%' ) ); ?></p>
 					<table class="form-table" role="presentation">
@@ -1100,21 +1190,98 @@ JS;
 		<?php
 	}
 
-	/** Hidden inputs for the settings that live on the other tab. */
+	private function render_sitemap_tab( $s ) {
+		$key  = self::OPTION;
+		$rows = array();
+		foreach ( self::post_types() as $name => $label ) {
+			$obj    = get_post_type_object( $name );
+			$rows[] = array( 'pt', $name, $obj ? $obj->labels->name : $label, self::type_hidden( $name ) );
+		}
+		foreach ( self::sitemap_taxonomy_list() as $name => $label ) {
+			$hidden = ( 'post_tag' === $name && '1' === $s['noindex_tag'] ) || ( 'category' === $name && '1' === $s['noindex_category'] );
+			$rows[] = array( 'tax', $name, $label, $hidden );
+		}
+		$file = file_exists( ABSPATH . 'robots.txt' );
+		?>
+		<h2><?php esc_html_e( 'Sitemap', 'b61-toolkit' ); ?></h2>
+		<p><?php esc_html_e( 'Choose what is listed in the sitemap search engines read. Pages marked "Hide from search engines" are always left out.', 'b61-toolkit' ); ?>
+		<a href="<?php echo esc_url( home_url( '/wp-sitemap.xml' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'View sitemap', 'b61-toolkit' ); ?><span class="screen-reader-text"> <?php esc_html_e( '(opens in a new tab)', 'b61-toolkit' ); ?></span></a></p>
+		<table class="widefat striped b61-features" role="presentation">
+			<thead><tr><th scope="col"><?php esc_html_e( 'Include', 'b61-toolkit' ); ?></th><th scope="col"><?php esc_html_e( 'Name', 'b61-toolkit' ); ?></th></tr></thead>
+			<tbody>
+			<?php foreach ( $rows as $row ) : ?>
+				<?php
+				list( $kind, $name, $label, $hidden ) = $row;
+				$id                                     = 'b61-sm-' . $kind . '-' . $name;
+				$value                                  = $kind . ':' . $name;
+				?>
+				<tr>
+					<td>
+						<?php if ( ! $hidden ) : ?>
+							<input type="hidden" name="<?php echo esc_attr( $key ); ?>[sitemap_shown][]" value="<?php echo esc_attr( $value ); ?>" />
+						<?php endif; ?>
+						<input type="checkbox" class="b61-switch" role="switch" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $key ); ?>[sitemap_include][]" value="<?php echo esc_attr( $value ); ?>" <?php checked( ! $hidden && self::in_sitemap( $kind, $name ) ); ?> <?php disabled( $hidden ); ?> />
+					</td>
+					<td>
+						<label for="<?php echo esc_attr( $id ); ?>"><strong><?php echo esc_html( $label ); ?></strong></label>
+						<code style="margin-left:6px;"><?php echo esc_html( $name ); ?></code>
+						<?php if ( $hidden ) : ?>
+							<br /><span class="description"><?php esc_html_e( 'Hidden from search engines, so never listed.', 'b61-toolkit' ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+
+		<h2><?php esc_html_e( 'robots.txt', 'b61-toolkit' ); ?></h2>
+		<?php if ( $file ) : ?>
+			<div class="notice notice-warning inline"><p><?php esc_html_e( 'This site has a real robots.txt file on the server, which replaces the one WordPress makes. The lines below won\'t be used until that file is removed (ask your host).', 'b61-toolkit' ); ?></p></div>
+		<?php endif; ?>
+		<table class="form-table" role="presentation">
+			<tr><th scope="row"><label for="b61-seo-robots"><?php esc_html_e( 'Extra rules', 'b61-toolkit' ); ?></label></th>
+				<td><textarea class="large-text code" rows="6" id="b61-seo-robots" name="<?php echo esc_attr( $key ); ?>[robots_extra]" placeholder="User-agent: GPTBot&#10;Disallow: /"><?php echo esc_textarea( $s['robots_extra'] ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Added to the end of the robots.txt WordPress makes. Most sites need nothing here. One rule per line, such as "User-agent: GPTBot" then "Disallow: /" to ask OpenAI not to train on the site. To hide a page from Google, use "Hide from search engines" on the page instead — robots.txt doesn\'t remove pages from results.', 'b61-toolkit' ); ?></p></td></tr>
+			<tr><th scope="row"><?php esc_html_e( 'Current robots.txt', 'b61-toolkit' ); ?></th>
+				<td><pre style="background:#f6f7f7;border:1px solid #e2e4e7;border-radius:6px;padding:10px 12px;max-width:40rem;white-space:pre-wrap;margin:0;"><?php echo esc_html( $file ? __( '(served from the file on the server)', 'b61-toolkit' ) : self::robots_preview() ); ?></pre>
+				<p class="description"><a href="<?php echo esc_url( home_url( '/robots.txt' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'View robots.txt', 'b61-toolkit' ); ?><span class="screen-reader-text"> <?php esc_html_e( '(opens in a new tab)', 'b61-toolkit' ); ?></span></a></p></td></tr>
+		</table>
+		<?php
+	}
+
+	/** Which settings each tab edits; the others ride along as hidden fields. */
+	private static function tab_fields() {
+		return array(
+			'general' => array( 'separator', 'home_title', 'home_description', 'default_image', 'org_type', 'google_verify', 'bing_verify', 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404' ),
+			'content' => array( 'templates', 'hidden_types' ),
+			'sitemap' => array( 'sitemap_exclude', 'robots_extra' ),
+		);
+	}
+
+	/** Hidden inputs for every setting not on the current tab. */
 	private function hidden_fields( $s, $tab ) {
-		$key    = self::OPTION;
-		$fields = 'content' === $tab ? array( 'templates', 'hidden_types' ) : array( 'separator', 'home_title', 'home_description', 'default_image', 'org_type', 'google_verify', 'bing_verify', 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404' );
-		foreach ( $fields as $f ) {
-			if ( 'templates' === $f ) {
-				foreach ( $s['templates'] as $type => $tpl ) {
-					echo '<input type="hidden" name="' . esc_attr( $key . '[templates][' . $type . ']' ) . '" value="' . esc_attr( $tpl ) . '" />';
+		$key   = self::OPTION;
+		$flags = array( 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404' );
+		foreach ( self::tab_fields() as $t => $fields ) {
+			if ( $t === $tab ) {
+				continue;
+			}
+			foreach ( $fields as $f ) {
+				if ( 'templates' === $f ) {
+					foreach ( $s['templates'] as $type => $tpl ) {
+						echo '<input type="hidden" name="' . esc_attr( $key . '[templates][' . $type . ']' ) . '" value="' . esc_attr( $tpl ) . '" />';
+					}
+				} elseif ( in_array( $f, array( 'hidden_types', 'sitemap_exclude' ), true ) ) {
+					foreach ( $s[ $f ] as $item ) {
+						echo '<input type="hidden" name="' . esc_attr( $key . '[' . $f . '][]' ) . '" value="' . esc_attr( $item ) . '" />';
+					}
+				} elseif ( in_array( $f, $flags, true ) ) {
+					if ( '1' === $s[ $f ] ) {
+						echo '<input type="hidden" name="' . esc_attr( $key . '[' . $f . ']' ) . '" value="1" />';
+					}
+				} else {
+					echo '<input type="hidden" name="' . esc_attr( $key . '[' . $f . ']' ) . '" value="' . esc_attr( (string) $s[ $f ] ) . '" />';
 				}
-			} elseif ( 'hidden_types' === $f ) {
-				foreach ( $s['hidden_types'] as $type ) {
-					echo '<input type="hidden" name="' . esc_attr( $key . '[hidden_types][]' ) . '" value="' . esc_attr( $type ) . '" />';
-				}
-			} elseif ( ! ( in_array( $f, array( 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404' ), true ) && '1' !== $s[ $f ] ) ) {
-				echo '<input type="hidden" name="' . esc_attr( $key . '[' . $f . ']' ) . '" value="' . esc_attr( $s[ $f ] ) . '" />';
 			}
 		}
 	}
