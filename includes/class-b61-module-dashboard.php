@@ -292,6 +292,22 @@ class B61_Module_Dashboard extends B61_Toolkit_Module {
 			}
 		}
 
+		if ( $toolkit->is_enabled( 'post_expiration' ) ) {
+			$soon = B61_Module_Post_Expiration::upcoming( 3 );
+			if ( $soon ) {
+				$dfmt = $fmt . ' ' . get_option( 'time_format' );
+				echo '<p class="b61-dash-h">' . esc_html__( 'Expiring soon', 'b61-toolkit' ) . '</p><ul class="b61-dash-list">';
+				foreach ( $soon as $p ) {
+					if ( ! current_user_can( 'edit_post', $p->ID ) ) {
+						continue;
+					}
+					$at = (int) get_post_meta( $p->ID, B61_Module_Post_Expiration::META_AT, true );
+					echo '<li><span class="dashicons dashicons-clock" aria-hidden="true"></span><span class="b61-dash-main"><a href="' . esc_url( (string) get_edit_post_link( $p->ID ) ) . '">' . esc_html( get_the_title( $p ) ? get_the_title( $p ) : __( '(no title)', 'b61-toolkit' ) ) . '</a><span class="b61-dash-meta">' . esc_html( wp_date( $dfmt, $at ) ) . '</span></span></li>';
+				}
+				echo '</ul>';
+			}
+		}
+
 		$recent = get_posts(
 			array(
 				'post_type'      => array_keys( B61_Module_SEO::post_types() ),

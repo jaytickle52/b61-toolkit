@@ -60,7 +60,7 @@ class B61_Module_Duplicate extends B61_Toolkit_Module {
 	public static function skipped_meta() {
 		return apply_filters(
 			'b61_duplicate_skip_meta',
-			array( '_edit_lock', '_edit_last', '_wp_old_slug', '_wp_old_date', '_b61_duplicated_from', '_elementor_css', '_elementor_page_assets', '_elementor_element_cache', '_elementor_screenshot', '_elementor_screenshot_failed' )
+			array( '_edit_lock', '_edit_last', '_wp_old_slug', '_wp_old_date', '_b61_duplicated_from', '_b61_expire_at', '_b61_expire_action', '_b61_expired', '_elementor_css', '_elementor_page_assets', '_elementor_element_cache', '_elementor_screenshot', '_elementor_screenshot_failed' )
 		);
 	}
 

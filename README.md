@@ -19,6 +19,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Calendar | ICS Calendar (`[b61_calendar]`, also answers `[ics_calendar]`) |
 | Organization Details | network "Options Page & Fields" snippet / ACF Global Info (`[b61_details field="…"]`; `[b61_school]` still works) |
 | Announcement Bar | Bulletin Announcements (one scheduled notice bar, closable, no endpoints) |
+| Scheduling & Expiration | PublishPress Future / Post Expirator (expiry date per item, per content type) |
 | Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
 | Media Usage | — ("Used in" column, attachment details, Used / Not used filter) |
 | SEO | Rank Math / Yoast (titles, descriptions, noindex, canonical, sharing tags, sitemap, schema from Org Details/Events/People, redirects + 404 log, llms.txt, import from both) |
@@ -39,6 +40,16 @@ Switch on **SEO** in Features. Every content type with public pages gets a **Sea
 - Structured data comes from Org Details (name, logo, phone, address, social links), Events (dates, times, location), People (name, job title — never email or phone) and breadcrumbs.
 - **Sitemap & robots.txt** tab: switch each content type and taxonomy in or out of WordPress's own sitemap (`/wp-sitemap.xml`; hidden pages are always left out), add extra robots.txt rules, and see the robots.txt being served. `/llms.txt` summarises the site for AI search tools.
 - While Rank Math, Yoast, AIOSEO, SEOPress, The SEO Framework, Slim SEO or Squirrly is active, the module prints nothing in the page head — import first, check the report, then deactivate the old plugin.
+
+## Scheduling & Expiration
+
+The post-level version of the Announcement Bar's start/stop times. Switch it on in Features, then under **B61 Toolkit → Scheduling & Expiration** tick the content types that should get it (Posts by default — e.g. on for News, off for Pages) and pick the default action.
+
+- Each chosen type gets an **Expiration** box on its edit screen (block or classic editor): an *Expires* date and what happens then — **Unpublish** (back to Drafts), **Make private**, **Move to Trash**, or for Posts **Remove from featured** (un-sticks it; it stays published).
+- Publishing later is WordPress's own scheduling (future date → Schedule); the box shows the scheduled publish date and warns if the expiry falls before it.
+- An **Expires** column on the list screens, a **Coming up** list on the settings screen, and **Expiring soon** on the Client Dashboard.
+- Each item gets its own WP-Cron event, plus an hourly sweep for anything missed. When Clear Cache is on, the item's page is cleared the moment it expires.
+- Turning a type off pauses its dates (they're kept); anything overdue expires when it's turned back on. Duplicating an item doesn't copy its expiry. Developers: `b61_post_expired` fires after each expiry; `b61_expiration_available_types` filters the list of types.
 
 ## Editing screens
 

@@ -142,6 +142,7 @@ class B61_Toolkit {
 			new B61_Module_Admin_Theme(),
 			new B61_Module_Dashboard(),
 			new B61_Module_Announcement_Bar(),
+			new B61_Module_Post_Expiration(),
 			new B61_Module_Media_Folders(),
 			new B61_Module_Media_Usage(),
 			new B61_Module_Alt_Text(),
