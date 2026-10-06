@@ -92,7 +92,9 @@ class B61_Breakdance_Fields {
 					'label'    => $label,
 					'category' => $cat,
 					'value'    => static function () use ( $k ) {
-						return self::meta( 'b61_person_' . $k );
+						$v = self::meta( 'b61_person_' . $k );
+						// Bio is a visual editor that saves line breaks, not <p> tags.
+						return 'bio' === $k ? wpautop( $v ) : $v;
 					},
 				);
 			}
