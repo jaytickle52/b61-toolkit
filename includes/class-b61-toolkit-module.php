@@ -48,6 +48,14 @@ abstract class B61_Toolkit_Module {
 		return array();
 	}
 
+	/**
+	 * True when the current person may not switch this module on or off
+	 * (its switch is shown read-only and saving keeps the current value).
+	 */
+	public function locked() {
+		return false;
+	}
+
 	/** Extra note rendered under the toggle on the Features screen. Optional. */
 	public function status_note() {
 		return '';

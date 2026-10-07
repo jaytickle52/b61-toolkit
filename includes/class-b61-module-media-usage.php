@@ -209,37 +209,67 @@ JS;
 	 * @return int[]
 	 */
 	public static function ids_in_text( $text ) {
+		return self::ordered_ids_in_text( $text );
+	}
+
+	/**
+	 * Attachment IDs referenced in text, in the order they first appear.
+	 *
+	 * @param string $text Anything.
+	 * @return int[]
+	 */
+	public static function ordered_ids_in_text( $text ) {
 		$text = (string) $text;
 		if ( '' === $text ) {
 			return array();
 		}
 		// JSON escapes slashes and quotes, sometimes twice (Breakdance stores JSON inside JSON).
-		$text = str_ireplace( '\\u002f', '/', $text );
-		$text = preg_replace( '#\\\\+(["/])#', '$1', $text );
-		$ids  = array();
+		$text  = str_ireplace( '\\u002f', '/', $text );
+		$text  = preg_replace( '#\\\\+(["/])#', '$1', $text );
+		$found = array(); // [offset, id] or [offset, 'file:path'].
 
-		if ( preg_match_all( '/wp-image-(\d+)/', $text, $m ) ) {
-			$ids = array_merge( $ids, $m[1] );
-		}
-		if ( preg_match_all( '/<!--\s+wp:[a-z0-9\/-]+\s+\{[^}]*?"(?:id|mediaId)":(\d+)/', $text, $m ) ) {
-			$ids = array_merge( $ids, $m[1] );
-		}
-		if ( preg_match_all( '/\[gallery[^\]]*\bids=["\']?([\d,\s]+)/', $text, $m ) ) {
-			foreach ( $m[1] as $list ) {
-				$ids = array_merge( $ids, preg_split( '/[\s,]+/', trim( $list ) ) );
+		$patterns = array(
+			'/wp-image-(\d+)/',
+			'/<!--\s+wp:[a-z0-9\/-]+\s+\{[^}]*?"(?:id|mediaId)":(\d+)/',
+			'/"id":(\d+),"filename"/', // Breakdance media objects.
+		);
+		foreach ( $patterns as $re ) {
+			if ( preg_match_all( $re, $text, $m, PREG_OFFSET_CAPTURE ) ) {
+				foreach ( $m[1] as $hit ) {
+					$found[] = array( $hit[1], (int) $hit[0] );
+				}
 			}
 		}
-		// Breakdance media objects: {"id":123,"filename":…}.
-		if ( preg_match_all( '/"id":(\d+),"filename"/', $text, $m ) ) {
-			$ids = array_merge( $ids, $m[1] );
+		if ( preg_match_all( '/\[gallery[^\]]*\bids=["\']?([\d,\s]+)/', $text, $m, PREG_OFFSET_CAPTURE ) ) {
+			foreach ( $m[1] as $hit ) {
+				foreach ( preg_split( '/[\s,]+/', trim( $hit[0] ) ) as $i => $id ) {
+					$found[] = array( $hit[1] + $i, (int) $id );
+				}
+			}
 		}
-
 		$marker = preg_quote( self::uploads_marker(), '#' );
-		if ( '' !== $marker && preg_match_all( '#' . $marker . '/([^"\'\s<>()?\#\\\\,]+\.[a-z0-9]{2,5})#i', $text, $m ) ) {
-			$ids = array_merge( $ids, self::ids_for_files( $m[1] ) );
+		$paths  = array();
+		if ( '' !== $marker && preg_match_all( '#' . $marker . '/([^"\'\s<>()?\#\\\\,]+\.[a-z0-9]{2,5})#i', $text, $m, PREG_OFFSET_CAPTURE ) ) {
+			foreach ( $m[1] as $hit ) {
+				$found[] = array( $hit[1], 'file:' . $hit[0] );
+				$paths[] = $hit[0];
+			}
 		}
+		$map = $paths ? self::file_map( $paths ) : array();
 
-		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
+		usort(
+			$found,
+			static function ( $a, $b ) {
+				return $a[0] <=> $b[0];
+			}
+		);
+		$ids = array();
+		foreach ( $found as $f ) {
+			$id = is_int( $f[1] ) ? $f[1] : (int) ( $map[ substr( $f[1], 5 ) ] ?? 0 );
+			if ( $id > 0 && ! in_array( $id, $ids, true ) ) {
+				$ids[] = $id;
+			}
+		}
 		return $ids;
 	}
 
@@ -250,29 +280,46 @@ JS;
 	 * @return int[]
 	 */
 	public static function ids_for_files( $paths ) {
-		$candidates = array();
-		foreach ( array_unique( $paths ) as $p ) {
-			$p = rawurldecode( $p );
-			$candidates[ $p ] = true;
+		return array_values( array_unique( array_filter( self::file_map( $paths ) ) ) );
+	}
+
+	/**
+	 * Map each upload-relative path to its attachment ID (0 when unknown).
+	 *
+	 * @param string[] $paths Paths as found in content.
+	 * @return array path => attachment ID
+	 */
+	public static function file_map( $paths ) {
+		$want = array(); // candidate => [paths that could be it].
+		foreach ( array_unique( $paths ) as $orig ) {
+			$p    = rawurldecode( $orig );
 			$base = preg_replace( '/-\d+x\d+(?=\.[a-z0-9]+$)/i', '', $p );
-			$candidates[ $base ] = true;
-			$candidates[ preg_replace( '/(\.[a-z0-9]+)$/i', '-scaled$1', $base ) ] = true;
-			$candidates[ preg_replace( '/-(scaled|rotated)(?=\.[a-z0-9]+$)/i', '', $base ) ] = true;
+			foreach ( array(
+				$p,
+				$base,
+				preg_replace( '/(\.[a-z0-9]+)$/i', '-scaled$1', $base ),
+				preg_replace( '/-(scaled|rotated)(?=\.[a-z0-9]+$)/i', '', $base ),
+			) as $c ) {
+				$want[ $c ][] = $orig;
+			}
 		}
-		$candidates = array_keys( $candidates );
-		if ( ! $candidates ) {
-			return array();
+		$out = array_fill_keys( array_unique( $paths ), 0 );
+		if ( ! $want ) {
+			return $out;
 		}
 		global $wpdb;
-		$ids = array();
-		foreach ( array_chunk( $candidates, 200 ) as $chunk ) {
-			$in  = implode( ',', array_fill( 0, count( $chunk ), '%s' ) );
-			$ids = array_merge(
-				$ids,
-				$wpdb->get_col( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value IN ($in)", $chunk ) ) // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-			);
+		foreach ( array_chunk( array_keys( $want ), 200 ) as $chunk ) {
+			$in   = implode( ',', array_fill( 0, count( $chunk ), '%s' ) );
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value IN ($in)", $chunk ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			foreach ( $rows as $r ) {
+				foreach ( $want[ $r->meta_value ] ?? array() as $orig ) {
+					if ( ! $out[ $orig ] ) {
+						$out[ $orig ] = (int) $r->post_id;
+					}
+				}
+			}
 		}
-		return array_map( 'intval', $ids );
+		return $out;
 	}
 
 	/** Keep only IDs that are attachments. */

@@ -132,6 +132,7 @@ class B61_Toolkit {
 			new B61_Module_Duplicate(),
 			new B61_Module_Replace_Media(),
 			new B61_Module_Admin_Cleanup(),
+			new B61_Module_Agency_Tools(),
 			new B61_Module_Login_Page(),
 			new B61_Module_Email_Protection(),
 			new B61_Module_Password_Page(),
@@ -145,6 +146,7 @@ class B61_Toolkit {
 			new B61_Module_Post_Expiration(),
 			new B61_Module_Media_Folders(),
 			new B61_Module_Media_Usage(),
+			new B61_Module_Featured_Image(),
 			new B61_Module_Alt_Text(),
 			new B61_Module_Balanced_Headlines(),
 			new B61_Module_Paragraph_Orphans(),
@@ -261,7 +263,12 @@ class B61_Toolkit {
 
 	public function sanitize_modules( $input ) {
 		$clean = array();
+		$now   = $this->settings();
 		foreach ( $this->modules as $id => $module ) {
+			if ( $module->locked() ) {
+				$clean[ $id ] = ( ! empty( $now[ $id ] ) && '1' === (string) $now[ $id ] ) ? '1' : '0';
+				continue;
+			}
 			$clean[ $id ] = ( ! empty( $input[ $id ] ) ) ? '1' : '0';
 		}
 
@@ -323,6 +330,7 @@ class B61_Toolkit {
 									name="<?php echo esc_attr( self::MODULES_OPTION ); ?>[<?php echo esc_attr( $id ); ?>]"
 									value="1"
 									aria-describedby="<?php echo esc_attr( $field ); ?>-desc"
+									<?php disabled( $module->locked() ); ?>
 									<?php checked( ! empty( $settings[ $id ] ) && '1' === (string) $settings[ $id ] ); ?> />
 							</td>
 							<td>

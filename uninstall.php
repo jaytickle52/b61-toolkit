@@ -35,6 +35,13 @@ function b61_toolkit_uninstall_site() {
 	delete_transient( 'b61_help_guides_cache' );
 	delete_transient( 'b61_dash_seo_findings' );
 	delete_option( 'b61_media_usage_state' );
+	delete_option( 'b61_toolkit_featured_image' );
+	delete_option( 'b61_featured_fill_state' );
+	wp_clear_scheduled_hook( 'b61_featured_fill' );
+	delete_option( 'b61_toolkit_agency_tools' );
+	delete_option( 'b61_seo_links_state' );
+	delete_transient( 'b61_seo_links_map' );
+	wp_clear_scheduled_hook( 'b61_seo_links_index' );
 	delete_option( 'b61_media_usage_option_refs' );
 	wp_clear_scheduled_hook( 'b61_media_usage_index' );
 	delete_option( 'b61_seo_404_log' );
@@ -50,6 +57,7 @@ function b61_toolkit_uninstall_site() {
 	delete_post_meta_by_key( '_banner_ai_alt_text_model' );
 	delete_post_meta_by_key( '_b61_used_in' );
 	delete_post_meta_by_key( '_b61_media_refs' );
+	delete_post_meta_by_key( '_b61_links_out' );
 	// Expiry dates are settings for a feature that no longer exists; without
 	// the plugin nothing would act on them.
 	delete_post_meta_by_key( '_b61_expire_at' );

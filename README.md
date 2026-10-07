@@ -13,6 +13,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Duplicate | ASE duplication |
 | Replace Media | ASE media replacement |
 | Admin Cleanup | ASE admin/dashboard/comments/feeds/external-link settings |
+| Hide Agency Tools | — (Novamira, Respira and other agency plugins hidden from everyone outside the team) |
 | Login Page | ASE login page customizer |
 | Email Protection | ASE email obfuscation |
 | Password Pages | "Password-Protected Page" snippet, Password Protected Page Design |
@@ -22,6 +23,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Scheduling & Expiration | PublishPress Future / Post Expirator (expiry date per item, per content type) |
 | Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
 | Media Usage | — ("Used in" column, attachment details, Used / Not used filter) |
+| Auto Featured Image | Auto Featured Image-type plugins (first real image, or a fallback per content type) |
 | SEO | Rank Math / Yoast (titles, descriptions, noindex, canonical, sharing tags, sitemap, schema from Org Details/Events/People, redirects + 404 log, llms.txt, import from both) |
 | Clear Cache | the cache plugins' own "purge" buttons — one admin-bar button for every layer, automatic after updates |
 | Client Dashboard | WordPress's dashboard cards (Needs attention, Your site at a glance, Help & how-to, News) |
@@ -76,6 +78,18 @@ Guides are written once on banner61.com: switch the module on there and tick *Th
 ## Media Usage
 
 Indexes where each file is used: its address (any size) in content or custom fields — which covers Breakdance pages, templates, headers and footers — image blocks and galleries, featured and SEO share images, the site icon and logo, Breakdance global settings and Toolkit settings. The first index runs in the background in batches of 50; after that each item is re-indexed when saved. "Not used" means nothing on this site points at the file; a file linked from an email or another website will still show, so there is a filter to review them but no bulk delete. Extra ID fields can be added with the `b61_media_usage_id_meta` filter.
+
+## Auto Featured Image
+
+When something in a chosen content type is saved without a featured image, the first real image in its content or Breakdance design becomes the featured image — skipping SVGs, the site icon and logo, the login logo and anything narrower than the minimum width (300px by default). With no image, the fallback chosen for that type is used. An image someone picked is never replaced; one the Toolkit picked follows the content, and if someone removes it the Toolkit leaves that item alone (`_b61_auto_thumb` = `no`). *Fill in missing featured images* works through existing content in the background.
+
+## Hide Agency Tools
+
+Hides the chosen plugins (Novamira and Respira are pre-ticked) from everyone outside the team: their Plugins row, menus and screens, admin bar items, notices, dashboard cards and update badges. Deactivating, deleting or editing them by URL is refused. The plugins keep running and updates still install through automatic updates or for the team. The team is anyone whose login email is on a listed domain (banner61.com by default) or in the extra addresses; only the team sees the settings screen or can switch the feature off. A site with no team administrator yet treats every administrator as team, so switching it on can't lock anyone out, and `define( 'B61_TOOLKIT_TEAM', true )` makes everyone team on a staging copy. This is about tidiness, not security: anything these plugins expose (MCP, REST) is unchanged.
+
+## Internal links (SEO Report)
+
+The SEO module indexes the links each page, post, Breakdance header/footer/template and menu makes to other pages on the site (in the background at first, then on every save). The SEO Report lists links to pages that don't exist, links to drafts or trashed pages, links that only work through a redirect, and pages nothing links to (pages only by default — `b61_seo_orphan_types` — since posts, events and people are reached through lists). The Pages screen gets a *Linked from* column. Links a Breakdance post loop builds on the fly aren't stored anywhere, so they don't count.
 
 ## Copying settings between sites
 

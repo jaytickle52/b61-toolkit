@@ -114,6 +114,7 @@ class B61_SEO_Report {
 			$out[] = array( 'warning', __( 'Redirects to check', 'b61-toolkit' ), __( 'A redirect should land on a real page in one step.', 'b61-toolkit' ), $chains );
 		}
 
+		$out = array_merge( $out, B61_SEO_Links::findings() );
 		$out = array_merge( $out, self::alt_text_findings() );
 
 		$org = array();
@@ -137,6 +138,18 @@ class B61_SEO_Report {
 			$out[] = array( 'info', __( 'Organization details search engines are missing', 'b61-toolkit' ), __( 'These feed the knowledge panel and map listings.', 'b61-toolkit' ), $org );
 		}
 
+		// Most important first (stable within each severity).
+		$rank = array(
+			'error'   => 0,
+			'warning' => 1,
+			'info'    => 2,
+		);
+		usort(
+			$out,
+			static function ( $a, $b ) use ( $rank ) {
+				return ( $rank[ $a[0] ] ?? 3 ) <=> ( $rank[ $b[0] ] ?? 3 );
+			}
+		);
 		return apply_filters( 'b61_seo_report', $out );
 	}
 

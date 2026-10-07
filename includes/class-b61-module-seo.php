@@ -257,6 +257,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		B61_SEO_Import::hooks();
 		B61_SEO_Report::hooks();
 		B61_SEO_Trash::hooks();
+		B61_SEO_Links::hooks();
 
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'option_page_capability_' . self::OPTION . '_group', array( $this, 'settings_capability' ) );
