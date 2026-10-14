@@ -1,10 +1,13 @@
 <?php
 /**
- * Email log for the Email module: the last 100 sends, newest first.
+ * Email log for the Email module: the last 100 sends from the past 30 days,
+ * newest first.
  *
  * One non-autoloaded option holds time, recipients, subject, sent/failed,
  * the error, how it was sent and which plugin or theme sent it. Message
- * bodies are never stored.
+ * bodies are never stored. Recipients and subjects are personal data (a
+ * parent's address, "New inquiry from …"), so entries also expire by age;
+ * the b61_email_log_days filter changes how long (0 keeps them by count only).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,11 +18,33 @@ class B61_Email_Log {
 
 	const OPTION = 'b61_toolkit_email_log';
 	const MAX    = 100;
+	const DAYS   = 30;
+
+	public static function days() {
+		return max( 0, (int) apply_filters( 'b61_email_log_days', self::DAYS ) );
+	}
+
+	/** Drop entries older than days(). */
+	private static function fresh( array $log ) {
+		$days = self::days();
+		if ( ! $days ) {
+			return $log;
+		}
+		$since = time() - $days * DAY_IN_SECONDS;
+		return array_values(
+			array_filter(
+				$log,
+				static function ( $e ) use ( $since ) {
+					return is_array( $e ) && (int) ( $e['time'] ?? 0 ) >= $since;
+				}
+			)
+		);
+	}
 
 	/** @return array[] Newest first. */
 	public static function entries() {
 		$log = get_option( self::OPTION, array() );
-		return is_array( $log ) ? $log : array();
+		return is_array( $log ) ? self::fresh( $log ) : array();
 	}
 
 	public static function add( array $entry ) {

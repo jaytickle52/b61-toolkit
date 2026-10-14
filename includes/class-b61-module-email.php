@@ -114,10 +114,8 @@ class B61_Module_Email extends B61_Toolkit_Module {
 
 	public function status_note() {
 		$conflict = B61_Email_SMTP::conflict();
-		$name     = self::sender_name();
-		$email    = self::sender_email();
 		/* translators: %s: sender, e.g. "Grace Academy <office@grace.org>" */
-		$sender = esc_html( sprintf( __( 'Site email comes from %s.', 'b61-toolkit' ), sprintf( '%s <%s>', $name, '' !== $email ? $email : self::wordpress_default_email() ) ) );
+		$sender = esc_html( sprintf( __( 'Site email comes from %s.', 'b61-toolkit' ), sprintf( '%s <%s>', self::sender_name(), self::sending_address() ) ) );
 
 		if ( $conflict && B61_Email_SMTP::enabled() ) {
 			return '<span style="color:#b32d2e;">' . esc_html( B61_Email_SMTP::conflict_message( $conflict ) ) . '</span> ' . $sender;
@@ -189,6 +187,30 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		return ( '' !== $email && is_email( $email ) ) ? $email : '';
 	}
 
+	/**
+	 * The address mail goes out from when no plugin chose one: the From email
+	 * set here, else — when sending through SMTP — the SMTP username if it is an
+	 * address, else WordPress's default (wordpress@domain).
+	 */
+	public static function sending_address() {
+		$ours = self::sender_email();
+		if ( '' !== $ours ) {
+			return $ours;
+		}
+		if ( B61_Email_SMTP::ready() ) {
+			$user = (string) B61_Email_SMTP::value( 'user' );
+			if ( is_email( $user ) ) {
+				return $user;
+			}
+		}
+		return self::wordpress_default_email();
+	}
+
+	private static function email_domain( $email ) {
+		$at = strrpos( (string) $email, '@' );
+		return false === $at ? '' : strtolower( substr( (string) $email, $at + 1 ) );
+	}
+
 	/** True when $email is the address WordPress fills in when nobody set one. */
 	public static function is_wordpress_default_email( $email ) {
 		return 0 === stripos( trim( (string) $email ), 'wordpress@' );
@@ -210,19 +232,23 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		return $atts;
 	}
 
+	/**
+	 * From address. Through SMTP, an address on another domain (a form's
+	 * "From: parent@gmail.com") is always replaced: the mail server would
+	 * refuse it or the recipient would mark it as forged (SPF/DMARC). Fluent
+	 * SMTP does the same by default. The replaced address becomes the Reply-To.
+	 */
 	public function filter_from_email( $email ) {
-		$ours = self::sender_email();
-		if ( self::forced() ) {
-			$target = '' !== $ours ? $ours : self::wordpress_default_email();
-			if ( ! self::is_wordpress_default_email( $email ) && is_email( $email ) && strtolower( $email ) !== strtolower( $target ) ) {
+		$target  = self::sending_address();
+		$default = self::is_wordpress_default_email( $email );
+		$foreign = B61_Email_SMTP::ready() && ! $default && self::email_domain( $email ) !== self::email_domain( $target );
+		if ( self::forced() || $foreign ) {
+			if ( ! $default && is_email( $email ) && strtolower( $email ) !== strtolower( $target ) ) {
 				$this->replaced_from = $email;
 			}
 			return $target;
 		}
-		if ( '' !== $ours && self::is_wordpress_default_email( $email ) ) {
-			return $ours;
-		}
-		return $email;
+		return $default ? $target : $email;
 	}
 
 	public function filter_from_name( $name ) {
@@ -416,6 +442,13 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		);
 		$ok = wp_mail( $to, $subject, $body );
 
+		// PHPMailer is shared for the rest of the request: switch debugging back off.
+		global $phpmailer;
+		if ( is_object( $phpmailer ) && property_exists( $phpmailer, 'SMTPDebug' ) ) {
+			$phpmailer->SMTPDebug   = 0;
+			$phpmailer->Debugoutput = 'error_log';
+		}
+
 		remove_action( 'phpmailer_init', $debug, PHP_INT_MAX );
 		remove_action( 'wp_mail_failed', $failed );
 
@@ -552,7 +585,7 @@ class B61_Module_Email extends B61_Toolkit_Module {
 	}
 
 	public function handle_import() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! B61_Email_SMTP::can_edit( 'site' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'b61-toolkit' ), 403 );
 		}
 		check_admin_referer( self::ACTION_IMPORT );
@@ -685,11 +718,11 @@ class B61_Module_Email extends B61_Toolkit_Module {
 					<td><input type="text" class="regular-text" id="b61-email-from-name" name="<?php echo esc_attr( $key ); ?>[from_name]" value="<?php echo esc_attr( $s['from_name'] ); ?>" placeholder="<?php echo esc_attr( self::site_title() ); ?>" />
 					<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: General Settings URL */ __( 'Leave blank to use the Site Title (<a href="%s">Settings → General</a>). It\'s read each time an email is sent, so renaming the site renames the sender.', 'b61-toolkit' ), esc_url( admin_url( 'options-general.php' ) ) ), array( 'a' => array( 'href' => true ) ) ); ?></p></td></tr>
 				<tr><th scope="row"><label for="b61-email-from-email"><?php esc_html_e( 'From email', 'b61-toolkit' ); ?></label></th>
-					<td><input type="email" class="regular-text" id="b61-email-from-email" name="<?php echo esc_attr( $key ); ?>[from_email]" value="<?php echo esc_attr( $s['from_email'] ); ?>" placeholder="<?php echo esc_attr( self::wordpress_default_email() ); ?>" />
-					<p class="description"><?php esc_html_e( 'Leave blank to keep WordPress\'s default address. Use an address on this site\'s own domain — with SMTP, usually the mailbox you sign in with — so it isn\'t marked as spam.', 'b61-toolkit' ); ?></p></td></tr>
+					<td><input type="email" class="regular-text" id="b61-email-from-email" name="<?php echo esc_attr( $key ); ?>[from_email]" value="<?php echo esc_attr( $s['from_email'] ); ?>" placeholder="<?php echo esc_attr( self::sending_address() ); ?>" />
+					<p class="description"><?php esc_html_e( 'Leave blank to use the SMTP username (when it\'s an address), or WordPress\'s default address without SMTP. Use an address on this site\'s own domain — with SMTP, usually the mailbox you sign in with — so it isn\'t marked as spam.', 'b61-toolkit' ); ?></p></td></tr>
 				<tr><th scope="row"><?php esc_html_e( 'Force sender', 'b61-toolkit' ); ?></th>
 					<td><label><input type="checkbox" name="<?php echo esc_attr( $key ); ?>[force_from]" value="1" <?php checked( '1', $s['force_from'] ); ?> /> <?php esc_html_e( 'Use this name and address for every email, even when a form or plugin sets its own', 'b61-toolkit' ); ?></label>
-					<p class="description"><?php esc_html_e( 'Off: only email WordPress would send as "WordPress" changes; forms keep their own From. On: everything is sent as above, and the address it replaced (such as a visitor\'s, on a form notification) becomes the Reply-To.', 'b61-toolkit' ); ?></p></td></tr>
+					<p class="description"><?php esc_html_e( 'Off: only email WordPress would send as "WordPress" changes; forms keep their own From name. On: everything is sent as above. Either way, when sending through SMTP a From address on another domain (such as a visitor\'s, on a form notification) is replaced, since the mail server would refuse it, and that address becomes the Reply-To.', 'b61-toolkit' ); ?></p></td></tr>
 			</table>
 
 			<h2><?php esc_html_e( 'SMTP', 'b61-toolkit' ); ?></h2>
@@ -699,7 +732,7 @@ class B61_Module_Email extends B61_Toolkit_Module {
 			<?php submit_button(); ?>
 		</form>
 
-		<?php $fluent = self::fluent_connection(); ?>
+		<?php $fluent = B61_Email_SMTP::can_edit( 'site' ) ? self::fluent_connection() : null; ?>
 		<?php if ( $fluent ) : ?>
 			<h2><?php esc_html_e( 'Import from Fluent SMTP', 'b61-toolkit' ); ?></h2>
 			<div class="b61-card">
@@ -773,8 +806,14 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		?>
 		<p class="description">
 			<?php
-			/* translators: %d: number of emails kept */
-			echo esc_html( sprintf( __( 'The last %d emails this site sent or tried to send. Message contents are not kept.', 'b61-toolkit' ), B61_Email_Log::MAX ) );
+			$days = B61_Email_Log::days();
+			echo esc_html(
+				$days
+					/* translators: 1: number of emails kept, 2: number of days */
+					? sprintf( __( 'The last %1$d emails this site sent or tried to send in the past %2$d days. Message contents are not kept.', 'b61-toolkit' ), B61_Email_Log::MAX, $days )
+					/* translators: %d: number of emails kept */
+					: sprintf( __( 'The last %d emails this site sent or tried to send. Message contents are not kept.', 'b61-toolkit' ), B61_Email_Log::MAX )
+			);
 			?>
 		</p>
 		<ul class="subsubsub">

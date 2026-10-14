@@ -260,6 +260,53 @@ class B61_Email_SMTP {
 	}
 
 	/* ------------------------------------------------------------------ */
+	/* Permission and warnings                                             */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Who may change the SMTP connection. Whoever controls the mail server can
+	 * read every email the site sends, password-reset links included, so on a
+	 * network this is super admins only (the same people who switch features
+	 * on); a site admin there could otherwise take over other accounts.
+	 */
+	public static function can_edit( $context = 'site' ) {
+		if ( 'network' === $context ) {
+			return current_user_can( 'manage_network_options' );
+		}
+		$cap = function_exists( 'b61_toolkit' ) ? b61_toolkit()->capability() : 'manage_options';
+		return current_user_can( $cap );
+	}
+
+	/**
+	 * Likely mistakes in the connection as it resolves now.
+	 *
+	 * @return string[]
+	 */
+	public static function warnings( $context = 'site' ) {
+		list( $host ) = self::field( 'host', $context );
+		if ( '' === (string) $host ) {
+			return array();
+		}
+		list( $port )   = self::field( 'port', $context );
+		list( $secure ) = self::field( 'secure', $context );
+		list( $auth )   = self::field( 'auth', $context );
+		$host           = strtolower( (string) $host );
+		$local          = in_array( $host, array( 'localhost', '::1', '[::1]' ), true ) || 0 === strpos( $host, '127.' );
+		$out            = array();
+		if ( 'none' === $secure && '1' === $auth && ! $local ) {
+			$out[] = __( 'Encryption is off, so the SMTP password is sent across the internet unencrypted. Choose TLS or SSL.', 'b61-toolkit' );
+		}
+		if ( 465 === (int) $port && 'tls' === $secure ) {
+			$out[] = __( 'Port 465 normally needs SSL, not TLS. If the test email hangs or times out, switch to SSL.', 'b61-toolkit' );
+		}
+		if ( in_array( (int) $port, array( 25, 587 ), true ) && 'ssl' === $secure ) {
+			/* translators: %d: port number */
+			$out[] = sprintf( __( 'Port %d normally uses TLS (STARTTLS), not SSL. If the test email hangs or times out, switch to TLS.', 'b61-toolkit' ), (int) $port );
+		}
+		return $out;
+	}
+
+	/* ------------------------------------------------------------------ */
 	/* Saving                                                              */
 	/* ------------------------------------------------------------------ */
 
@@ -277,6 +324,12 @@ class B61_Email_SMTP {
 	public static function sanitize( array $input, array $current, $context, array &$errors ) {
 		$current = wp_parse_args( $current, self::defaults() );
 		$out     = array();
+
+		// Without permission nothing about the connection changes, however the
+		// request was made.
+		if ( ! self::can_edit( $context ) ) {
+			return array_intersect_key( $current, self::defaults() );
+		}
 
 		$out['smtp_enabled'] = empty( $input['smtp_enabled'] ) ? '0' : '1';
 		foreach ( array( 'host', 'port', 'secure', 'auth', 'user' ) as $field ) {
@@ -316,6 +369,9 @@ class B61_Email_SMTP {
 	/* ------------------------------------------------------------------ */
 
 	private static function source_label( $source ) {
+		if ( 'permission' === $source ) {
+			return is_multisite() ? __( 'Only network administrators can change this', 'b61-toolkit' ) : __( 'Only administrators who manage features can change this', 'b61-toolkit' );
+		}
 		return 'constant' === $source ? __( 'Set in wp-config', 'b61-toolkit' ) : __( 'Set by network', 'b61-toolkit' );
 	}
 
@@ -341,12 +397,17 @@ class B61_Email_SMTP {
 			'none' => __( 'None', 'b61-toolkit' ),
 		);
 
+		$editable = self::can_edit( $context );
+
 		if ( 'site' === $context ) {
 			$src = self::enabled_source();
 			?>
 			<tr><th scope="row"><?php esc_html_e( 'Enable SMTP', 'b61-toolkit' ); ?></th><td>
 				<?php if ( 'site' !== $src ) : ?>
 					<p><strong><?php echo esc_html( self::source_label( $src ) ); ?></strong> — <?php esc_html_e( 'site email is sent through the SMTP server below.', 'b61-toolkit' ); ?></p>
+				<?php elseif ( ! $editable ) : ?>
+					<code><?php echo esc_html( '1' === (string) $saved['smtp_enabled'] ? __( 'On', 'b61-toolkit' ) : __( 'Off', 'b61-toolkit' ) ); ?></code>
+					<span class="description" style="margin-left:.5em;"><?php echo esc_html( self::source_label( 'permission' ) ); ?></span>
 				<?php else : ?>
 					<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[smtp_enabled]" value="1" <?php checked( '1', (string) $saved['smtp_enabled'] ); ?> /> <?php esc_html_e( 'Send site email through an SMTP server', 'b61-toolkit' ); ?></label>
 					<p class="description"><?php esc_html_e( 'Off: email goes out through the web server\'s own mail function, which often lands in spam.', 'b61-toolkit' ); ?></p>
@@ -358,7 +419,10 @@ class B61_Email_SMTP {
 		foreach ( $rows as $field => $label ) {
 			list( $value, $source ) = self::field( $field, $context );
 			$id     = 'b61-smtp-' . $context . '-' . $field;
-			$locked = $source !== $context;
+			$locked = $source !== $context || ! $editable;
+			if ( $source === $context && ! $editable ) {
+				$source = 'permission';
+			}
 			?>
 			<tr><th scope="row"><label for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></label></th><td>
 			<?php if ( $locked ) : ?>
@@ -372,12 +436,20 @@ class B61_Email_SMTP {
 				?>
 				<code id="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( '' !== (string) $shown ? (string) $shown : '—' ); ?></code>
 				<span class="description" style="margin-left:.5em;"><?php echo esc_html( self::source_label( $source ) ); ?></span>
+				<?php if ( 'secure' === $field ) : ?>
+					<?php foreach ( self::warnings( $context ) as $warning ) : ?>
+						<p class="description" style="color:#b32d2e;"><?php echo esc_html( $warning ); ?></p>
+					<?php endforeach; ?>
+				<?php endif; ?>
 			<?php elseif ( 'secure' === $field ) : ?>
 				<select id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>[smtp_secure]">
 					<?php foreach ( $secure_labels as $k => $l ) : ?>
 						<option value="<?php echo esc_attr( $k ); ?>" <?php selected( $value, $k ); ?>><?php echo esc_html( $l ); ?></option>
 					<?php endforeach; ?>
 				</select>
+				<?php foreach ( self::warnings( $context ) as $warning ) : ?>
+					<p class="description" style="color:#b32d2e;"><?php echo esc_html( $warning ); ?></p>
+				<?php endforeach; ?>
 			<?php elseif ( 'auth' === $field ) : ?>
 				<input type="hidden" name="<?php echo esc_attr( $name ); ?>[smtp_auth]" value="0" />
 				<label><input type="checkbox" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>[smtp_auth]" value="1" <?php checked( '1', $value ); ?> /> <?php esc_html_e( 'Sign in with a username and password', 'b61-toolkit' ); ?></label>
@@ -397,6 +469,8 @@ class B61_Email_SMTP {
 		<tr><th scope="row"><label for="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Password', 'b61-toolkit' ); ?></label></th><td>
 		<?php if ( $pw_source !== $context ) : ?>
 			<code>••••••</code> <span class="description" style="margin-left:.5em;"><?php echo esc_html( self::source_label( $pw_source ) ); ?></span>
+		<?php elseif ( ! $editable ) : ?>
+			<code><?php echo esc_html( '' !== (string) $saved['smtp_password'] ? '••••••' : '—' ); ?></code> <span class="description" style="margin-left:.5em;"><?php echo esc_html( self::source_label( 'permission' ) ); ?></span>
 		<?php else : ?>
 			<?php $has = '' !== (string) $saved['smtp_password']; ?>
 			<input type="password" class="regular-text" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>[smtp_password]" value="" autocomplete="new-password"
