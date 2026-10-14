@@ -1,7 +1,7 @@
 <?php
 /**
  * Multisite support: a Network Admin screen with network-wide settings (the
- * shared OpenAI key) and a read-only overview of which features each site has on.
+ * shared OpenAI key, the SMTP connection for Email) and a read-only overview of which features each site has on.
  *
  * Only loaded on multisite. Per-site feature switches stay on each site's own
  * B61 Toolkit → Features screen.
@@ -32,8 +32,15 @@ class B61_Toolkit_Network {
 	public static function settings() {
 		return wp_parse_args(
 			(array) get_site_option( self::OPTION, array() ),
-			array( 'openai_api_key' => '' )
+			array_merge( array( 'openai_api_key' => '' ), self::smtp_defaults() )
 		);
+	}
+
+	/** Network SMTP connection defaults (no on/off switch: a host turns it on for every site using Email). */
+	private static function smtp_defaults() {
+		$d = class_exists( 'B61_Email_SMTP' ) ? B61_Email_SMTP::defaults() : array();
+		unset( $d['smtp_enabled'] );
+		return $d;
 	}
 
 	public function menu() {
@@ -64,9 +71,20 @@ class B61_Toolkit_Network {
 			$settings['openai_api_key'] = trim( sanitize_text_field( $input['openai_api_key'] ) );
 		}
 
+		$errors = array();
+		if ( class_exists( 'B61_Email_SMTP' ) ) {
+			$smtp = B61_Email_SMTP::sanitize( $input, $settings, 'network', $errors );
+			unset( $smtp['smtp_enabled'] );
+			$settings = array_merge( $settings, $smtp );
+		}
+
 		update_site_option( self::OPTION, $settings );
 
-		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG, 'updated' => '1' ), network_admin_url( 'admin.php' ) ) );
+		$args = array( 'page' => self::SLUG, 'updated' => '1' );
+		if ( $errors ) {
+			$args['smtp_error'] = '1';
+		}
+		wp_safe_redirect( add_query_arg( $args, network_admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
@@ -83,6 +101,9 @@ class B61_Toolkit_Network {
 
 			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only. ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Network settings saved.', 'b61-toolkit' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( isset( $_GET['smtp_error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only. ?>
+				<div class="notice notice-error"><p><?php esc_html_e( 'The SMTP password could not be saved because this server can\'t encrypt it (the OpenSSL extension is missing). Set B61_SMTP_PASS in wp-config.php instead.', 'b61-toolkit' ); ?></p></div>
 			<?php endif; ?>
 
 			<h2><?php esc_html_e( 'Network settings', 'b61-toolkit' ); ?></h2>
@@ -105,6 +126,13 @@ class B61_Toolkit_Network {
 						</td>
 					</tr>
 				</table>
+				<?php if ( class_exists( 'B61_Email_SMTP' ) ) : ?>
+					<h2><?php esc_html_e( 'Email (SMTP)', 'b61-toolkit' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'With a host here, every site that has the Email feature on sends through this server. Sites can still set their own From name and address; a username or password left blank here can be set per site.', 'b61-toolkit' ); ?></p>
+					<table class="form-table" role="presentation">
+						<?php B61_Email_SMTP::render_fields( self::OPTION, 'network', $settings ); ?>
+					</table>
+				<?php endif; ?>
 				<?php submit_button( __( 'Save Network Settings', 'b61-toolkit' ) ); ?>
 			</form>
 

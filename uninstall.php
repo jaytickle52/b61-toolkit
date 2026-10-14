@@ -40,6 +40,7 @@ function b61_toolkit_uninstall_site() {
 	wp_clear_scheduled_hook( 'b61_featured_fill' );
 	delete_option( 'b61_toolkit_agency_tools' );
 	delete_option( 'b61_toolkit_email' );
+	delete_option( 'b61_toolkit_email_log' );
 	delete_option( 'b61_seo_links_state' );
 	delete_transient( 'b61_seo_links_map' );
 	wp_clear_scheduled_hook( 'b61_seo_links_index' );
@@ -76,6 +77,9 @@ if ( is_multisite() ) {
 } else {
 	b61_toolkit_uninstall_site();
 }
+
+// Email failure notices people dismissed (user meta is shared across a network).
+delete_metadata( 'user', 0, 'b61_email_failures_dismissed', '', true );
 
 // Cached GitHub release lookups (stored network-wide on multisite).
 $b61_repo = defined( 'B61_TOOLKIT_GITHUB_REPO' ) ? B61_TOOLKIT_GITHUB_REPO : 'jaytickle52/b61-toolkit';
