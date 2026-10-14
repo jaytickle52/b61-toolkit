@@ -16,7 +16,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Hide Agency Tools | — (Novamira, Respira and other agency plugins hidden from everyone outside the team) |
 | Login Page | ASE login page customizer |
 | Email Protection | ASE email obfuscation |
-| Email | the "set the sender name" launch step (sender name from the Site Title, optional From address) |
+| Email | Fluent SMTP, and the "set the sender name" launch step (sender name from the Site Title, SMTP, test email, email log) |
 | Password Pages | "Password-Protected Page" snippet, Password Protected Page Design |
 | Calendar | ICS Calendar (`[b61_calendar]`, also answers `[ics_calendar]`) |
 | Organization Details | network "Options Page & Fields" snippet / ACF Global Info (`[b61_details field="…"]`; `[b61_school]` still works) |
@@ -53,6 +53,27 @@ Under **B61 Toolkit → Email**:
 - **From name**: blank means the Site Title (or the domain if the title is empty).
 - **From email**: blank keeps WordPress's default address. Use an address on the site's own domain.
 - **Force sender**: off, only WordPress's own default name and address are replaced, so a form (Fluent Forms, Gravity Forms, Breakdance forms) that sets its own From keeps it. On, every email uses the name and address above; if that replaces an address a form chose (such as the visitor's), that address becomes the Reply-To unless the email already has one.
+
+### SMTP
+
+Tick **Enable SMTP** and fill in host, port, encryption (TLS/STARTTLS on 587, SSL on 465, or none), and the username and password. Prefer putting the connection in `wp-config.php` so the password isn't in the database:
+
+```php
+define( 'B61_SMTP_HOST', 'smtp.example.com' );
+define( 'B61_SMTP_PORT', 587 );
+define( 'B61_SMTP_SECURE', 'tls' ); // tls, ssl or none
+define( 'B61_SMTP_USER', 'office@example.org' );
+define( 'B61_SMTP_PASS', '…' );
+```
+
+Each setting comes from the constant first, then **Network Admin → B61 Toolkit** (multisite), then the site's own Email screen; a setting from somewhere else is shown read-only with "Set in wp-config" or "Set by network". A host set by constant or by the network turns SMTP on for every site that has Email switched on. On a network, sites keep their own From name and address, and a username or password the network leaves blank can be set per site.
+
+- **Password**: when typed on the screen it's stored encrypted (AES-256-GCM, keyed from the site's AUTH salts), never shown again ("•••••• saved", with **Clear**), and never included in Settings export. If the salts change and it can't be read, admins see "SMTP password needs re-entering", email goes out through the server's mail function, and the log notes why.
+- **Send a test email** sends to you (or any address) and shows the result: success, or the error plus the last 30 lines of the conversation with the server, with the password hidden.
+- **Email Log** tab: the last 100 emails — time, recipients, subject, sent or failed, the error, how it was sent and which plugin or theme sent it — filterable by status, with **Clear log**. Message contents are not kept. Admins get a notice when 3 or more emails fail within 24 hours.
+- **Fluent SMTP, WP Mail SMTP, Post SMTP or Easy WP SMTP active**: the Toolkit doesn't touch how mail is sent (the sender name still applies) and says to deactivate the other plugin. **Import from Fluent SMTP** copies Fluent's SMTP connection, including its saved password, and works whether Fluent is still active or not.
+
+Moving a site off Fluent SMTP: switch Email on, **Import from Fluent SMTP**, deactivate Fluent SMTP, send a test email, then submit a form to check it still arrives.
 
 SPF, DKIM and DMARC are still set up per domain at launch.
 
