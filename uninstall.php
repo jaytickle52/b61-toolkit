@@ -39,6 +39,7 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_featured_fill_state' );
 	wp_clear_scheduled_hook( 'b61_featured_fill' );
 	delete_option( 'b61_toolkit_agency_tools' );
+	delete_option( 'b61_toolkit_email' );
 	delete_option( 'b61_seo_links_state' );
 	delete_transient( 'b61_seo_links_map' );
 	wp_clear_scheduled_hook( 'b61_seo_links_index' );

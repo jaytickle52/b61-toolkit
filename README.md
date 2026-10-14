@@ -16,6 +16,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Hide Agency Tools | — (Novamira, Respira and other agency plugins hidden from everyone outside the team) |
 | Login Page | ASE login page customizer |
 | Email Protection | ASE email obfuscation |
+| Email | the "set the sender name" launch step (sender name from the Site Title, optional From address) |
 | Password Pages | "Password-Protected Page" snippet, Password Protected Page Design |
 | Calendar | ICS Calendar (`[b61_calendar]`, also answers `[ics_calendar]`) |
 | Organization Details | network "Options Page & Fields" snippet / ACF Global Info (`[b61_details field="…"]`; `[b61_school]` still works) |
@@ -42,6 +43,18 @@ Switch on **SEO** in Features. Every content type with public pages gets a **Sea
 - Structured data comes from Org Details (name, logo, phone, address, social links), Events (dates, times, location), People (name, job title — never email or phone) and breadcrumbs.
 - **Sitemap & robots.txt** tab: switch each content type and taxonomy in or out of WordPress's own sitemap (`/wp-sitemap.xml`; hidden pages are always left out), add extra robots.txt rules, and see the robots.txt being served. `/llms.txt` summarises the site for AI search tools.
 - While Rank Math, Yoast, AIOSEO, SEOPress, The SEO Framework, Slim SEO or Squirrly is active, the module prints nothing in the page head — import first, check the report, then deactivate the old plugin.
+
+## Email
+
+Switch on **Email** in Features (it starts off on every site). Email WordPress sends as "WordPress <wordpress@yoursite>" — password resets, new-user notices, admin alerts — then goes out under the **Site Title** instead. The title is read each time an email is sent, so renaming the site renames the sender and there is nothing to set at launch. Entities in the title are decoded ("Smith &amp; Co" sends as "Smith & Co") and line breaks are stripped.
+
+Under **B61 Toolkit → Email**:
+
+- **From name**: blank means the Site Title (or the domain if the title is empty).
+- **From email**: blank keeps WordPress's default address. Use an address on the site's own domain.
+- **Force sender**: off, only WordPress's own default name and address are replaced, so a form (Fluent Forms, Gravity Forms, Breakdance forms) that sets its own From keeps it. On, every email uses the name and address above; if that replaces an address a form chose (such as the visitor's), that address becomes the Reply-To unless the email already has one.
+
+SPF, DKIM and DMARC are still set up per domain at launch.
 
 ## Scheduling & Expiration
 
