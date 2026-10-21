@@ -373,10 +373,14 @@ class B61_Module_Calendar extends B61_Toolkit_Module {
 		$html .= '</nav>';
 
 		$html .= '<table class="b61-cal__grid"><caption class="screen-reader-text">' . esc_html( $label ) . '</caption><thead><tr>';
+		// Weekday names from a known Sunday at noon in the site's own time zone.
+		// (strtotime( 'Sunday' ) is midnight UTC, which is still Saturday
+		// evening in the Americas, so every heading read one day early.)
+		$sunday = new DateTimeImmutable( '2024-01-07 12:00:00', $tz );
 		for ( $i = 0; $i < 7; $i++ ) {
 			$dow   = ( $week_start + $i ) % 7;
-			$ts    = strtotime( 'Sunday +' . $dow . ' days' );
-			$html .= '<th scope="col"><abbr title="' . esc_attr( wp_date( 'l', $ts ) ) . '">' . esc_html( wp_date( 'D', $ts ) ) . '</abbr></th>';
+			$ts    = $sunday->modify( '+' . $dow . ' days' )->getTimestamp();
+			$html .= '<th scope="col"><abbr title="' . esc_attr( wp_date( 'l', $ts, $tz ) ) . '">' . esc_html( wp_date( 'D', $ts, $tz ) ) . '</abbr></th>';
 		}
 		$html .= '</tr></thead><tbody><tr>';
 
