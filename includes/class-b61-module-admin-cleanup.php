@@ -370,44 +370,71 @@ class B61_Module_Admin_Cleanup extends B61_Toolkit_Module {
 	 * Links that already set a target are left alone.
 	 */
 	public function external_links( $content ) {
-		if ( is_admin() || false === stripos( $content, '<a ' ) || ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+		// The SEO module's site-wide switch covers this (and Breakdance) when it's on.
+		if ( class_exists( 'B61_Module_SEO' ) && B61_Module_SEO::external_links_on() ) {
 			return $content;
 		}
-		$home = wp_parse_url( home_url(), PHP_URL_HOST );
-		$p    = new WP_HTML_Tag_Processor( $content );
+		if ( is_admin() ) {
+			return $content;
+		}
+		return self::mark_external_links( $content );
+	}
+
+	/**
+	 * Make links to other sites open in a new tab: target="_blank",
+	 * rel="noopener noreferrer", and a screen-reader "(opens in a new tab)"
+	 * note (WCAG 2.4.4 / G201). Links that already say where to open
+	 * (any target attribute) are left as they are.
+	 *
+	 * @param string $html Any HTML: post content or a whole page.
+	 * @return string
+	 */
+	public static function mark_external_links( $html ) {
+		if ( false === stripos( $html, '<a' ) || ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+			return $html;
+		}
+		$own  = preg_replace( '/^www\./', '', strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) );
+		$keep = array_map( 'strtolower', (array) apply_filters( 'b61_external_links_same_site', array() ) );
+		$p    = new WP_HTML_Tag_Processor( $html );
 		$note = ' <span class="screen-reader-text">' . esc_html__( '(opens in a new tab)', 'b61-toolkit' ) . '</span>';
-		$hits = array();
+		$hits = 0;
 
 		while ( $p->next_tag( array( 'tag_name' => 'A' ) ) ) {
-			$href = (string) $p->get_attribute( 'href' );
-			$host = wp_parse_url( $href, PHP_URL_HOST );
-			if ( ! $host || 0 === strcasecmp( $host, (string) $home ) || null !== $p->get_attribute( 'target' ) ) {
+			$href = trim( (string) $p->get_attribute( 'href' ) );
+			if ( '' === $href || null !== $p->get_attribute( 'target' ) || null !== $p->get_attribute( 'data-b61-same-tab' ) ) {
 				continue;
 			}
 			$scheme = strtolower( (string) wp_parse_url( $href, PHP_URL_SCHEME ) );
-			if ( $scheme && ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			if ( 0 === strpos( $href, '//' ) ) {
+				$scheme = 'https';
+				$href   = 'https:' . $href;
+			}
+			if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+				continue; // Relative links, anchors, mailto:, tel: stay put.
+			}
+			$host = preg_replace( '/^www\./', '', strtolower( (string) wp_parse_url( $href, PHP_URL_HOST ) ) );
+			if ( '' === $host || $host === $own || in_array( $host, $keep, true ) ) {
 				continue;
 			}
 			$p->set_attribute( 'target', '_blank' );
 			$rel = trim( (string) $p->get_attribute( 'rel' ) . ' noopener noreferrer' );
 			$p->set_attribute( 'rel', implode( ' ', array_unique( preg_split( '/\s+/', $rel ) ) ) );
 			$p->set_attribute( 'data-b61-ext', '1' );
-			$hits[] = true;
+			++$hits;
 		}
-		$content = $p->get_updated_html();
-
-		if ( $hits ) {
-			// Append the screen-reader note just before each marked link closes.
-			$content = preg_replace_callback(
-				'#(<a\b[^>]*\bdata-b61-ext="1"[^>]*>)(.*?)(</a>)#is',
-				static function ( $m ) use ( $note ) {
-					$open = str_replace( ' data-b61-ext="1"', '', $m[1] );
-					return $open . $m[2] . $note . $m[3];
-				},
-				$content
-			);
+		if ( ! $hits ) {
+			return $html;
 		}
-		return $content;
+		// Add the screen-reader note just before each marked link closes.
+		return preg_replace_callback(
+			'#(<a\b[^>]*\bdata-b61-ext="1"[^>]*>)(.*?)(</a>)#is',
+			static function ( $m ) use ( $note ) {
+				$open = str_replace( ' data-b61-ext="1"', '', $m[1] );
+				$text = false === stripos( $m[2], 'opens in a new tab' ) ? $m[2] . $note : $m[2];
+				return $open . $text . $m[3];
+			},
+			$p->get_updated_html()
+		);
 	}
 
 	/* ------------------------------------------------------------------ */

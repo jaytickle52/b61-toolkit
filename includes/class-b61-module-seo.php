@@ -74,6 +74,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 			'attachment_redirect' => '1',
 			'llms_txt'           => '1',
 			'log_404'            => '1',
+			'external_new_tab'   => '0',
 			'templates'          => array(),
 			'hidden_types'       => array(),
 			'sitemap_exclude'    => array(),
@@ -170,6 +171,7 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 			'attachment_redirect' => $flag( 'attachment_redirect' ),
 			'llms_txt'            => $flag( 'llms_txt' ),
 			'log_404'             => $flag( 'log_404' ),
+			'external_new_tab'    => $flag( 'external_new_tab' ),
 			'templates'           => $templates,
 			'hidden_types'        => array_values( array_intersect( array_map( 'sanitize_key', (array) ( $input['hidden_types'] ?? array() ) ), array_keys( self::post_types() ) ) ),
 			'sitemap_exclude'     => self::clean_sitemap_exclude( $input ),
@@ -279,8 +281,18 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		add_action( 'update_option_b61_school_details', array( __CLASS__, 'flush_llms' ) );
 		add_action( 'update_option_blogname', array( __CLASS__, 'flush_llms' ) );
 
+		// A site hidden from search engines is warned about everywhere, even
+		// alongside another SEO plugin.
+		add_action( 'admin_bar_menu', array( __CLASS__, 'blocked_admin_bar' ), 5 );
+		add_action( 'admin_head', array( __CLASS__, 'blocked_css' ) );
+		add_action( 'wp_head', array( __CLASS__, 'blocked_css' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'blocked_notice' ) );
+
 		if ( self::conflict() ) {
 			return;
+		}
+		if ( self::external_links_on() ) {
+			add_action( 'template_redirect', array( __CLASS__, 'start_link_buffer' ), PHP_INT_MAX );
 		}
 		add_filter( 'pre_get_document_title', array( $this, 'document_title' ), 20 );
 		add_filter( 'document_title_separator', array( $this, 'separator' ) );
@@ -289,6 +301,89 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		add_action( 'wp_head', array( $this, 'head' ), 2 );
 		add_action( 'template_redirect', array( $this, 'attachment_redirect' ), 5 );
 		B61_SEO_Schema::hooks();
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* External links                                                      */
+	/* ------------------------------------------------------------------ */
+
+	public static function external_links_on() {
+		return b61_toolkit()->is_enabled( 'seo' ) && '1' === self::settings()['external_new_tab'] && ! self::conflict();
+	}
+
+	/** Whole-page pass on ordinary front-end pages, so Breakdance output is covered too. */
+	public static function start_link_buffer() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only checks.
+		if ( is_admin() || is_feed() || is_embed() || is_robots() || is_customize_preview() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST )
+			|| isset( $_GET['breakdance'] ) || isset( $_GET['breakdance_iframe'] ) || isset( $_GET['oxygen_iframe'] ) ) {
+			return;
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		if ( ! apply_filters( 'b61_external_links_page', true ) ) {
+			return;
+		}
+		ob_start( array( __CLASS__, 'finish_link_buffer' ) );
+	}
+
+	public static function finish_link_buffer( $html ) {
+		if ( ! is_string( $html ) || '' === $html || false === stripos( $html, '<html' ) ) {
+			return $html; // Not an HTML page (a file, JSON, a redirect).
+		}
+		return B61_Module_Admin_Cleanup::mark_external_links( $html );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* "Discourage search engines" warning                                 */
+	/* ------------------------------------------------------------------ */
+
+	public static function search_blocked() {
+		return '0' === (string) get_option( 'blog_public' );
+	}
+
+	public static function blocked_admin_bar( $bar ) {
+		if ( ! self::search_blocked() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$bar->add_node(
+			array(
+				'id'     => 'b61-search-blocked',
+				'parent' => 'top-secondary',
+				'title'  => '<span class="ab-icon dashicons dashicons-hidden" aria-hidden="true"></span><span class="ab-label">' . esc_html__( 'Hidden from Google', 'b61-toolkit' ) . '</span>',
+				'href'   => admin_url( 'options-reading.php' ),
+				'meta'   => array( 'title' => __( 'Search engines are blocked for this whole site (Settings → Reading). Fine on staging, wrong on a live site.', 'b61-toolkit' ) ),
+			)
+		);
+	}
+
+	public static function blocked_css() {
+		if ( ! self::search_blocked() || ! is_admin_bar_showing() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		// White on #B32D2E is 6.1:1; works on every admin colour scheme.
+		echo '<style id="b61-search-blocked">#wpadminbar #wp-admin-bar-b61-search-blocked>.ab-item{background:#B32D2E;color:#fff;font-weight:600}#wpadminbar #wp-admin-bar-b61-search-blocked>.ab-item .ab-icon:before{color:#fff;top:3px}#wpadminbar #wp-admin-bar-b61-search-blocked:hover>.ab-item,#wpadminbar #wp-admin-bar-b61-search-blocked>.ab-item:focus{background:#8A2424;color:#fff}</style>';
+	}
+
+	/** A notice on the screens people check first (the admin bar warning covers the rest). */
+	public static function blocked_notice() {
+		if ( ! self::search_blocked() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins', 'edit-page', 'options-reading' ), true ) ) {
+			return;
+		}
+		if ( 'options-reading' === $screen->id ) {
+			echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'This site is hidden from search engines.', 'b61-toolkit' ) . '</strong> ' . esc_html__( 'Untick "Discourage search engines from indexing this site" below when the site goes live.', 'b61-toolkit' ) . '</p></div>';
+			return;
+		}
+		echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'This site is hidden from search engines.', 'b61-toolkit' ) . '</strong> ' . wp_kses(
+			sprintf(
+				/* translators: %s: settings URL */
+				__( '"Discourage search engines" is ticked in <a href="%s">Settings → Reading</a>, so no page will appear in Google. Fine on a staging site; untick it when the site goes live.', 'b61-toolkit' ),
+				esc_url( admin_url( 'options-reading.php' ) )
+			),
+			array( 'a' => array( 'href' => true ) )
+		) . '</p></div>';
 	}
 
 	public function status_note() {
@@ -1147,6 +1242,13 @@ JS;
 							<td><label><input type="checkbox" name="<?php echo esc_attr( $key ); ?>[attachment_redirect]" value="1" <?php checked( '1', $s['attachment_redirect'] ); ?> /> <?php esc_html_e( 'Send visitors straight to the image or file instead of a near-empty page for it', 'b61-toolkit' ); ?></label></td></tr>
 					</table>
 
+					<h2><?php esc_html_e( 'Links', 'b61-toolkit' ); ?></h2>
+					<table class="form-table" role="presentation">
+						<tr><th scope="row"><?php esc_html_e( 'Links to other sites', 'b61-toolkit' ); ?></th>
+							<td><label><input type="checkbox" name="<?php echo esc_attr( $key ); ?>[external_new_tab]" value="1" <?php checked( '1', $s['external_new_tab'] ); ?> /> <?php esc_html_e( 'Open in a new tab, everywhere on the site', 'b61-toolkit' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Covers page content, Breakdance designs, headers, footers and menus. Screen readers hear "opens in a new tab". Links that already say where to open are left alone.', 'b61-toolkit' ); ?></p></td></tr>
+					</table>
+
 					<h2><?php esc_html_e( 'Extras', 'b61-toolkit' ); ?></h2>
 					<table class="form-table" role="presentation">
 						<tr><th scope="row"><?php esc_html_e( '404 log', 'b61-toolkit' ); ?></th>
@@ -1253,7 +1355,7 @@ JS;
 	/** Which settings each tab edits; the others ride along as hidden fields. */
 	private static function tab_fields() {
 		return array(
-			'general' => array( 'separator', 'home_title', 'home_description', 'default_image', 'org_type', 'google_verify', 'bing_verify', 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404' ),
+			'general' => array( 'separator', 'home_title', 'home_description', 'default_image', 'org_type', 'google_verify', 'bing_verify', 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404', 'external_new_tab' ),
 			'content' => array( 'templates', 'hidden_types' ),
 			'sitemap' => array( 'sitemap_exclude', 'robots_extra' ),
 		);
@@ -1262,7 +1364,7 @@ JS;
 	/** Hidden inputs for every setting not on the current tab. */
 	private function hidden_fields( $s, $tab ) {
 		$key   = self::OPTION;
-		$flags = array( 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404' );
+		$flags = array( 'noindex_author', 'noindex_date', 'noindex_tag', 'noindex_category', 'attachment_redirect', 'llms_txt', 'log_404', 'external_new_tab' );
 		foreach ( self::tab_fields() as $t => $fields ) {
 			if ( $t === $tab ) {
 				continue;

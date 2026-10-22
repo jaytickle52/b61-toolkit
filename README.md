@@ -124,6 +124,14 @@ When something in a chosen content type is saved without a featured image, the f
 
 Hides the chosen plugins (Novamira and Respira are pre-ticked) from everyone outside the team: their Plugins row, menus and screens, admin bar items, notices, dashboard cards and update badges. Deactivating, deleting or editing them by URL is refused. The plugins keep running and updates still install through automatic updates or for the team. The team is anyone whose login email is on a listed domain (banner61.com by default) or in the extra addresses; only the team sees the settings screen or can switch the feature off. A site with no team administrator yet treats every administrator as team, so switching it on can't lock anyone out, and `define( 'B61_TOOLKIT_TEAM', true )` makes everyone team on a staging copy. This is about tidiness, not security: anything these plugins expose (MCP, REST) is unchanged.
 
+## Links to other sites (SEO)
+
+SEO → General → *Links to other sites* opens every link to another website in a new tab, across the whole page — content, Breakdance designs, headers, footers and menus — with `rel="noopener noreferrer"` and a screen-reader "(opens in a new tab)" note. It works on the finished page (not just post content), skips the Breakdance editor, feeds and REST, and leaves links that already set a `target` (or carry `data-b61-same-tab`) alone. Treat other domains as "this site" with the `b61_external_links_same_site` filter. When it's on, Admin Cleanup's older content-only setting steps aside.
+
+## "Hidden from Google" warning
+
+Whenever Settings → Reading → "Discourage search engines" is ticked and the SEO module is on, administrators see a red **Hidden from Google** item in the admin bar on every screen (front end included), an error notice on the Dashboard, Plugins, Pages and Reading screens, plus the existing SEO-screen notice, SEO Report error and Client Dashboard item.
+
 ## Internal links (SEO Report)
 
 The SEO module indexes the links each page, post, Breakdance header/footer/template and menu makes to other pages on the site (in the background at first, then on every save). The SEO Report lists links to pages that don't exist, links to drafts or trashed pages, links that only work through a redirect, and pages nothing links to (pages only by default — `b61_seo_orphan_types` — since posts, events and people are reached through lists). The Pages screen gets a *Linked from* column. Links a Breakdance post loop builds on the fly aren't stored anywhere, so they don't count.
