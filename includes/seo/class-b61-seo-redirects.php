@@ -424,6 +424,8 @@ class B61_SEO_Redirects {
 				<p><?php submit_button( $current ? __( 'Update redirect', 'b61-toolkit' ) : __( 'Add redirect', 'b61-toolkit' ), 'primary', 'submit', false ); ?></p>
 			</form>
 
+			<?php B61_SEO_Migrate::render(); ?>
+
 			<h2><?php esc_html_e( 'Redirects', 'b61-toolkit' ); ?> <span class="count">(<?php echo (int) count( $rules ); ?>)</span></h2>
 			<?php if ( $rules ) : ?>
 				<table class="widefat striped b61-card" style="padding:0;display:table;">

@@ -24,6 +24,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Scheduling & Expiration | PublishPress Future / Post Expirator (expiry date per item, per content type) |
 | Media Folders | ASE media categories (adopts the existing `asenha-media-category` terms) |
 | Media Usage | — ("Used in" column, attachment details, Used / Not used filter) |
+| File Picker | copying file URLs out of the Media Library by hand (files in link search; Media button in the Breakdance editor) |
 | Auto Featured Image | Auto Featured Image-type plugins (first real image, or a fallback per content type) |
 | SEO | Rank Math / Yoast (titles, descriptions, noindex, canonical, sharing tags, sitemap, schema from Org Details/Events/People, redirects + 404 log, llms.txt, import from both) |
 | Clear Cache | the cache plugins' own "purge" buttons — one admin-bar button for every layer, automatic after updates |
@@ -135,6 +136,23 @@ Whenever Settings → Reading → "Discourage search engines" is ticked and the 
 ## Internal links (SEO Report)
 
 The SEO module indexes the links each page, post, Breakdance header/footer/template and menu makes to other pages on the site (in the background at first, then on every save). The SEO Report lists links to pages that don't exist, links to drafts or trashed pages, links that only work through a redirect, and pages nothing links to (pages only by default — `b61_seo_orphan_types` — since posts, events and people are reached through lists). The Pages screen gets a *Linked from* column. Links a Breakdance post loop builds on the fly aren't stored anywhere, so they don't count.
+
+## File Picker
+
+Two ways to link to a PDF or other file without leaving the page builder:
+
+- **Link search.** WordPress's link dialog — used by Breakdance's link fields and the classic editor — also lists matching files (documents, audio, video; not images), labelled "PDF · 2.1 MB", and inserts the file's own address. Files come from a separate query added after WordPress's own results on the first page, so sites with many photos never crowd pages out.
+- **Media button in the Breakdance editor** (bottom-left). Opens the Media Library — upload or choose — then puts the file's address into the link field you last clicked and copies it. The library runs in its own small admin page in an iframe (the way Breakdance shows its own media chooser), so WordPress's media scripts never load into the editor; the two talk with `postMessage`, same origin only. Uses Breakdance's `breakdance_builder_footer` hook (checked against 3.0.0-beta.6).
+
+Admin Theme's dark mode now stays off inside Breakdance's own link, media and text dialogs, which are styled light.
+
+## Moving from an old site (Redirects)
+
+Redirects → *Moving from an old site*: give the old sitemap's address (followed through sitemap indexes, within 40 seconds) or paste the sitemap or a list of addresses. Addresses that already work here (pages, the home page, category/tag/author/date and post type archives, the blog page), already have a redirect, or are files are set aside. For the rest the Toolkit suggests a page — **Strong** (same page name, or near-identical words), **Likely** (similar words, or same name in a different section), **Check** (nearest parent section, or loosely similar) — and can ask AI (the AI Alt Text OpenAI key) about the weak ones; AI answers are only kept when the page exists. Strong and Likely rows are pre-ticked. Nothing is created until **Create redirects for the ticked rows**; rows are keyed by their old address and shown 200 at a time. Redirects point at the page's real address (trailing slash included) so visitors land in one hop.
+
+## Write with AI (SEO)
+
+SEO → *Write with AI* lists published items of one content type — missing a description, missing a title, or all — 40 per page. **Write suggestions** asks AI (the AI Alt Text OpenAI key) for a title and description for each ticked item, one at a time, from the page's own text (the published page for Breakdance pages). Suggestions appear in editable fields beside what search engines see now; nothing changes until **Save the ticked pages**. Titles are saved as `<title> %sep% %sitename%` so the separator and site name stay consistent. Administrators only.
 
 ## Copying settings between sites
 
