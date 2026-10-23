@@ -139,7 +139,7 @@ The SEO module indexes the links each page, post, Breakdance header/footer/templ
 
 ## File Picker
 
-Two ways to link to a PDF or other file without leaving the page builder:
+On by default (single sites; on multisite it's switched on per site like every feature). Two ways to link to a PDF or other file without leaving the page builder:
 
 - **Link search.** WordPress's link dialog — used by Breakdance's link fields and the classic editor — also lists matching files (documents, audio, video; not images), labelled "PDF · 2.1 MB", and inserts the file's own address. Files come from a separate query added after WordPress's own results on the first page, so sites with many photos never crowd pages out.
 - **Media button in the Breakdance editor** (bottom-left). Opens the Media Library — upload or choose — then puts the file's address into the link field you last clicked and copies it. The library runs in its own small admin page in an iframe (the way Breakdance shows its own media chooser), so WordPress's media scripts never load into the editor; the two talk with `postMessage`, same origin only. Uses Breakdance's `breakdance_builder_footer` hook (checked against 3.0.0-beta.6).

@@ -37,8 +37,9 @@ class B61_Module_File_Picker extends B61_Toolkit_Module {
 		return __( 'Link to PDFs and other files straight from the page builder: files show up in link search, and a Media button in the Breakdance editor lets you upload or choose a file and drops its address into the link field.', 'b61-toolkit' );
 	}
 
+	/** On by default: it only adds to link search and the Breakdance editor, and does nothing where Breakdance isn't installed. */
 	public function enabled_by_default() {
-		return false;
+		return true;
 	}
 
 	public function init() {
