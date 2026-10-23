@@ -147,6 +147,7 @@ class B61_Toolkit {
 			new B61_Module_Post_Expiration(),
 			new B61_Module_Media_Folders(),
 			new B61_Module_Media_Usage(),
+			new B61_Module_File_Picker(),
 			new B61_Module_Featured_Image(),
 			new B61_Module_Alt_Text(),
 			new B61_Module_Balanced_Headlines(),

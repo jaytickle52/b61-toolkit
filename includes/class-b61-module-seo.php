@@ -260,6 +260,8 @@ class B61_Module_SEO extends B61_Toolkit_Module {
 		B61_SEO_Report::hooks();
 		B61_SEO_Trash::hooks();
 		B61_SEO_Links::hooks();
+		B61_SEO_Migrate::hooks();
+		B61_SEO_Bulk::hooks();
 
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_filter( 'option_page_capability_' . self::OPTION . '_group', array( $this, 'settings_capability' ) );
@@ -1053,6 +1055,56 @@ JS;
 		return mb_substr( $text, 0, 6000 );
 	}
 
+	/**
+	 * One AI request (the OpenAI key from AI Alt Text). Returns the reply text or WP_Error.
+	 *
+	 * @param string $prompt     Instructions and content.
+	 * @param int    $max_tokens Longest reply.
+	 */
+	public static function ai_text( $prompt, $max_tokens = 300 ) {
+		$key = self::ai_available() ? B61_Module_Alt_Text::api_key() : '';
+		if ( '' === $key ) {
+			return new WP_Error( 'b61_seo_ai', __( 'Add an OpenAI key under AI Alt Text first.', 'b61-toolkit' ) );
+		}
+		$res = wp_remote_post(
+			'https://api.openai.com/v1/responses',
+			array(
+				'timeout' => 60,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode(
+					array(
+						'model'             => B61_Module_Alt_Text::MODEL,
+						'input'             => $prompt,
+						'max_output_tokens' => (int) $max_tokens,
+					)
+				),
+			)
+		);
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		$body = json_decode( (string) wp_remote_retrieve_body( $res ), true );
+		$out  = '';
+		if ( ! empty( $body['output_text'] ) ) {
+			$out = $body['output_text'];
+		} elseif ( ! empty( $body['output'] ) && is_array( $body['output'] ) ) {
+			foreach ( $body['output'] as $item ) {
+				foreach ( (array) ( $item['content'] ?? array() ) as $c ) {
+					if ( ! empty( $c['text'] ) ) {
+						$out .= $c['text'];
+					}
+				}
+			}
+		}
+		if ( '' === trim( (string) $out ) ) {
+			return new WP_Error( 'b61_seo_ai', (string) ( $body['error']['message'] ?? __( 'Could not get a suggestion right now.', 'b61-toolkit' ) ) );
+		}
+		return (string) $out;
+	}
+
 	public static function suggest_description( $post ) {
 		$key = self::ai_available() ? B61_Module_Alt_Text::api_key() : '';
 		if ( '' === $key ) {
@@ -1069,43 +1121,13 @@ JS;
 			. "- Mention the organization's name if it fits naturally. No quotes, no emoji, no hashtags, no 'Welcome to'.\n"
 			. "- Return only the description.\n\n"
 			. 'Organization: ' . $org . "\nPage title: " . wp_strip_all_tags( get_the_title( $post ) ) . "\nPage text:\n" . $text;
-		$res = wp_remote_post(
-			'https://api.openai.com/v1/responses',
-			array(
-				'timeout' => 30,
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $key,
-					'Content-Type'  => 'application/json',
-				),
-				'body'    => wp_json_encode(
-					array(
-						'model'             => B61_Module_Alt_Text::MODEL,
-						'input'             => $prompt,
-						'max_output_tokens' => 120,
-					)
-				),
-			)
-		);
-		if ( is_wp_error( $res ) ) {
-			return $res;
-		}
-		$body = json_decode( (string) wp_remote_retrieve_body( $res ), true );
-		$out  = '';
-		if ( ! empty( $body['output_text'] ) ) {
-			$out = $body['output_text'];
-		} elseif ( ! empty( $body['output'] ) && is_array( $body['output'] ) ) {
-			foreach ( $body['output'] as $item ) {
-				foreach ( (array) ( $item['content'] ?? array() ) as $c ) {
-					if ( ! empty( $c['text'] ) ) {
-						$out = $c['text'];
-						break 2;
-					}
-				}
-			}
+		$out = self::ai_text( $prompt, 120 );
+		if ( is_wp_error( $out ) ) {
+			return $out;
 		}
 		$out = trim( trim( sanitize_textarea_field( (string) $out ) ), "\"'“”" );
 		if ( '' === $out ) {
-			return new WP_Error( 'b61_seo_ai', $body['error']['message'] ?? __( 'Could not get a suggestion right now.', 'b61-toolkit' ) );
+			return new WP_Error( 'b61_seo_ai', __( 'Could not get a suggestion right now.', 'b61-toolkit' ) );
 		}
 		return self::trim_description( $out, 160 );
 	}
@@ -1145,6 +1167,7 @@ JS;
 			'general' => __( 'General', 'b61-toolkit' ),
 			'content' => __( 'Content types', 'b61-toolkit' ),
 			'sitemap' => __( 'Sitemap & robots.txt', 'b61-toolkit' ),
+			'ai'      => __( 'Write with AI', 'b61-toolkit' ),
 			'import'  => __( 'Import', 'b61-toolkit' ),
 		);
 		$tab   = isset( $tabs[ $tab ] ) ? $tab : 'general';
@@ -1170,6 +1193,8 @@ JS;
 
 			<?php if ( 'import' === $tab ) : ?>
 				<?php B61_SEO_Import::render(); ?>
+			<?php elseif ( 'ai' === $tab ) : ?>
+				<?php B61_SEO_Bulk::render(); ?>
 			<?php else : ?>
 			<form method="post" action="options.php">
 				<?php settings_fields( self::OPTION . '_group' ); ?>

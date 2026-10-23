@@ -110,8 +110,17 @@ class B61_Module_Admin_Theme extends B61_Toolkit_Module {
 			. '@media (prefers-reduced-motion:reduce){#adminmenu li.menu-top>a{transition:none}}';
 	}
 
-	/** True on screens that show the block editor (kept light). */
+	/**
+	 * True on screens kept light: the block editor, and the small admin pages
+	 * Breakdance shows inside its editor (link, media and text dialogs),
+	 * which are styled light and become unreadable with dark fields.
+	 */
 	private static function is_block_editor_screen() {
+		foreach ( array_keys( $_GET ) as $param ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- which screen; read-only.
+			if ( 0 === strpos( (string) $param, 'breakdance_wpuiforbuilder' ) ) {
+				return true;
+			}
+		}
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		return $screen && method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor();
 	}
