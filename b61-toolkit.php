@@ -97,7 +97,7 @@ B61_Toolkit_Editor::hooks();
 function b61_toolkit_updater() {
 	static $updater = null;
 	if ( null === $updater ) {
-		$updater = new B61_GitHub_Updater( B61_TOOLKIT_FILE, B61_TOOLKIT_GITHUB_REPO, B61_TOOLKIT_VERSION, B61_TOOLKIT_GITHUB_TOKEN );
+		$updater = new B61_GitHub_Updater( B61_TOOLKIT_FILE, B61_TOOLKIT_GITHUB_REPO, B61_TOOLKIT_VERSION, B61_TOOLKIT_GITHUB_TOKEN, defined( 'B61_TOOLKIT_BETA' ) && B61_TOOLKIT_BETA );
 	}
 	return $updater;
 }
