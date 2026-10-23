@@ -186,10 +186,19 @@ Internal names (post types like `b61_person`, option keys, shortcodes, the `b61-
 
 ## Releasing an update
 
-1. Bump `Version:` and `B61_TOOLKIT_VERSION` in `b61-toolkit.php`.
+Sites update themselves from GitHub Releases through the normal Plugins / Updates screens — no zip uploads. The updater checks every six hours (the plugin row's **Check for updates** link forces it).
+
+1. Bump `Version:` and `B61_TOOLKIT_VERSION` in `b61-toolkit.php`, merge to `main`.
 2. Build the zip (top folder must be `b61-toolkit/`) — built zips go in `dist/`, which git ignores.
-3. Push, then on GitHub: **Releases → Draft a new release**, tag `vX.Y.Z`, attach `b61-toolkit.zip` (or `b61-toolkit-X.Y.Z.zip`), publish.
-4. Sites see the update on their Plugins screen within six hours ("Check for updates" link forces it).
+3. On GitHub: **Releases → Draft a new release**, tag `vX.Y.Z` on `main`, attach `b61-toolkit.zip` (or `b61-toolkit-X.Y.Z.zip`).
+4. Tick **Set as a pre-release** and publish. Only beta-channel sites see it.
+5. Test on staging. A staging site joins the beta channel with one line in its `wp-config.php` — the Plugins screen then says "Beta channel: gets pre-releases":
+   ```php
+   define( 'B61_TOOLKIT_BETA', true );
+   ```
+6. After Kever's go-ahead, edit the release: untick **Set as a pre-release**, tick **Set as the latest release**, update. Every live site is offered it within six hours.
+
+Live sites only ever see the release GitHub marks **Latest** (never a pre-release or draft), so publish full releases in version order. Skipped versions don't matter: a release includes every change before it.
 
 ## Third-party code
 

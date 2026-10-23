@@ -14,6 +14,12 @@
  *   3. WordPress sees the higher version on its next update check (cached for
  *      six hours; the "Check for updates" link on the Plugins screen clears it).
  *
+ * Pre-releases: live sites only ever see the newest full release. A staging
+ * site can opt in to pre-releases too (the beta channel) — for the Toolkit,
+ * define( 'B61_TOOLKIT_BETA', true ) in its wp-config.php — so a pre-release
+ * can be tested there through the normal Updates screen, then promoted to a
+ * full release (untick "Set as a pre-release" on GitHub) to reach every site.
+ *
  * Private repos: define a fine-grained, read-only token in wp-config.php. The
  * token only ever goes to api.github.com / codeload.github.com.
  *
@@ -52,20 +58,25 @@ class B61_GitHub_Updater {
 	/** @var string Site-transient key for the cached release. */
 	private $cache_key;
 
+	/** @var bool Also offer pre-releases (staging sites). */
+	private $beta;
+
 	/**
 	 * @param string $file    Main plugin file (__FILE__ of the plugin).
 	 * @param string $repo    "owner/repo". Empty disables the updater.
 	 * @param string $version Installed version.
 	 * @param string $token   Optional token for a private repo.
+	 * @param bool   $beta    Also offer pre-releases (for staging sites).
 	 */
-	public function __construct( $file, $repo, $version, $token = '' ) {
+	public function __construct( $file, $repo, $version, $token = '', $beta = false ) {
 		$this->file      = $file;
 		$this->basename  = plugin_basename( $file );
 		$this->slug      = dirname( $this->basename );
 		$this->repo      = trim( (string) $repo, " /\t\n\r" );
 		$this->version   = (string) $version;
 		$this->token     = (string) $token;
-		$this->cache_key = 'b61_gh_release_' . md5( $this->repo );
+		$this->beta      = (bool) $beta;
+		$this->cache_key = 'b61_gh_release_' . md5( $this->repo ) . ( $this->beta ? '_beta' : '' );
 	}
 
 	/** True when a repo is configured. */
@@ -75,6 +86,11 @@ class B61_GitHub_Updater {
 
 	public function repo() {
 		return $this->repo;
+	}
+
+	/** True when this site also takes pre-releases. */
+	public function is_beta() {
+		return $this->beta;
 	}
 
 	public function hooks() {
@@ -106,8 +122,10 @@ class B61_GitHub_Updater {
 			return empty( $cached['version'] ) ? null : $cached;
 		}
 
+		// Live sites: GitHub's "latest" (never a pre-release or draft). Beta sites:
+		// the highest version among recent published releases, pre-releases included.
 		$response = wp_remote_get(
-			'https://api.github.com/repos/' . $this->repo . '/releases/latest',
+			'https://api.github.com/repos/' . $this->repo . ( $this->beta ? '/releases?per_page=20' : '/releases/latest' ),
 			array(
 				'timeout' => 10,
 				'headers' => array( 'Accept' => 'application/vnd.github+json' ),
@@ -119,7 +137,10 @@ class B61_GitHub_Updater {
 			return null;
 		}
 
-		$body    = json_decode( wp_remote_retrieve_body( $response ), true );
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( $this->beta ) {
+			$body = self::highest_release( is_array( $body ) ? $body : array() );
+		}
 		$version = isset( $body['tag_name'] ) ? ltrim( (string) $body['tag_name'], 'vV' ) : '';
 		if ( ! is_array( $body ) || '' === $version || ! preg_match( '/^\d+(\.\d+)*([-.+][0-9A-Za-z.-]+)?$/', $version ) ) {
 			set_site_transient( $this->cache_key, array( 'version' => '' ), HOUR_IN_SECONDS );
@@ -161,6 +182,28 @@ class B61_GitHub_Updater {
 
 		set_site_transient( $this->cache_key, $release, self::CACHE_TTL );
 		return $release;
+	}
+
+	/**
+	 * The highest-versioned published release from a /releases list.
+	 *
+	 * @param array $list Releases as GitHub returns them.
+	 * @return array|null One release.
+	 */
+	public static function highest_release( $list ) {
+		$best = null;
+		$bv   = '';
+		foreach ( $list as $r ) {
+			if ( ! is_array( $r ) || ! empty( $r['draft'] ) || empty( $r['tag_name'] ) ) {
+				continue;
+			}
+			$v = ltrim( (string) $r['tag_name'], 'vV' );
+			if ( null === $best || version_compare( $v, $bv, '>' ) ) {
+				$best = $r;
+				$bv   = $v;
+			}
+		}
+		return $best;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -287,6 +330,9 @@ class B61_GitHub_Updater {
 		}
 		$url     = wp_nonce_url( add_query_arg( 'b61_check_updates', $this->slug, self_admin_url( 'plugins.php' ) ), 'b61_check_updates_' . $this->slug );
 		$links[] = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Check for updates', 'b61-toolkit' ) . '</a>';
+		if ( $this->beta ) {
+			$links[] = '<strong>' . esc_html__( 'Beta channel: gets pre-releases', 'b61-toolkit' ) . '</strong>';
+		}
 		return $links;
 	}
 
