@@ -19,6 +19,11 @@
  * (B61_Email_Log). While another SMTP plugin is active the transport stays
  * out of the way; the sender filters still run.
  *
+ * wp-config (1.23.0). B61_EMAIL_FROM and B61_EMAIL_FORCE_FROM override the
+ * site's From email and Force sender (shown read-only, "Set in wp-config");
+ * B61_EMAIL_ENABLE switches the feature on for sites with nothing saved, so a
+ * network's new subsites send correctly with no per-site setup.
+ *
  * Off by default, so nothing changes on a site until it is switched on there.
  */
 
@@ -57,6 +62,7 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		return __( 'Sends site email through your SMTP provider and sets the sender name from the Site Title.', 'b61-toolkit' );
 	}
 
+	/** Off by default; B61_EMAIL_ENABLE in wp-config switches it on (see filter_module_default()). */
 	public function enabled_by_default() {
 		return false;
 	}
@@ -180,8 +186,74 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		return '' !== $name ? $name : self::site_title();
 	}
 
-	/** The From address set here, or '' to leave WordPress's default. */
+	/* ------------------------------------------------------------------ */
+	/* wp-config constants                                                 */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * B61_EMAIL_FROM from wp-config when it is a valid address, else ''.
+	 * Set once in a network's wp-config, every subsite sends from it.
+	 */
+	public static function constant_from_email() {
+		if ( ! defined( 'B61_EMAIL_FROM' ) || ! is_scalar( B61_EMAIL_FROM ) ) {
+			return '';
+		}
+		$email = sanitize_email( trim( (string) B61_EMAIL_FROM ) );
+		return ( '' !== $email && is_email( $email ) ) ? $email : '';
+	}
+
+	/** B61_EMAIL_FROM is defined but empty or not an address, so it is ignored. */
+	public static function constant_from_email_invalid() {
+		return defined( 'B61_EMAIL_FROM' ) && '' === self::constant_from_email();
+	}
+
+	/**
+	 * A yes/no wp-config constant as true/false; null when it isn't defined
+	 * or isn't a yes/no value (true, false, 1, 0, "yes", "no", "on", "off").
+	 */
+	private static function constant_flag( $name ) {
+		if ( ! defined( $name ) ) {
+			return null;
+		}
+		$value = constant( $name );
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+		if ( ! is_scalar( $value ) ) {
+			return null;
+		}
+		return filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+	}
+
+	/** B61_EMAIL_FORCE_FROM: true/false overrides the Force sender checkbox; null = not set. */
+	public static function constant_force_from() {
+		return self::constant_flag( 'B61_EMAIL_FORCE_FROM' );
+	}
+
+	/**
+	 * B61_EMAIL_ENABLE: true switches the Email feature on by default on any
+	 * site with nothing saved for it (new subsites). A site where Email was
+	 * switched off and saved stays off.
+	 *
+	 * @param bool   $on Default so far.
+	 * @param string $id Feature id.
+	 */
+	public static function filter_module_default( $on, $id ) {
+		if ( 'email' === $id && true === self::constant_flag( 'B61_EMAIL_ENABLE' ) ) {
+			return true;
+		}
+		return $on;
+	}
+
+	/**
+	 * The From address set here, or '' to leave WordPress's default.
+	 * B61_EMAIL_FROM in wp-config wins over the site setting.
+	 */
 	public static function sender_email() {
+		$constant = self::constant_from_email();
+		if ( '' !== $constant ) {
+			return $constant;
+		}
 		$s     = self::settings();
 		$email = sanitize_email( $s['from_email'] );
 		return ( '' !== $email && is_email( $email ) ) ? $email : '';
@@ -216,7 +288,12 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		return 0 === stripos( trim( (string) $email ), 'wordpress@' );
 	}
 
+	/** Force sender: B61_EMAIL_FORCE_FROM in wp-config when set, else the site's checkbox. */
 	public static function forced() {
+		$constant = self::constant_force_from();
+		if ( null !== $constant ) {
+			return $constant;
+		}
 		$s = self::settings();
 		return '1' === $s['force_from'];
 	}
@@ -632,15 +709,25 @@ class B61_Module_Email extends B61_Toolkit_Module {
 	}
 
 	public function sanitize( $input ) {
-		$input = (array) $input;
-		$raw   = (string) ( $input['from_email'] ?? '' );
-		$email = sanitize_email( $raw );
-		if ( '' !== trim( $raw ) && ! is_email( $email ) ) {
-			$email = '';
-			if ( function_exists( 'add_settings_error' ) ) {
-				add_settings_error( self::OPTION, 'b61-email-from', __( 'The From email wasn\'t a valid address, so it was left blank (WordPress\'s default address is used).', 'b61-toolkit' ) );
+		$input  = (array) $input;
+		$stored = self::settings();
+
+		// Set in wp-config: the field isn't on the form, so keep what the site had saved.
+		if ( '' !== self::constant_from_email() ) {
+			$email = (string) $stored['from_email'];
+		} else {
+			$raw   = (string) ( $input['from_email'] ?? '' );
+			$email = sanitize_email( $raw );
+			if ( '' !== trim( $raw ) && ! is_email( $email ) ) {
+				$email = '';
+				if ( function_exists( 'add_settings_error' ) ) {
+					add_settings_error( self::OPTION, 'b61-email-from', __( 'The From email wasn\'t a valid address, so it was left blank (WordPress\'s default address is used).', 'b61-toolkit' ) );
+				}
 			}
 		}
+		$force = null !== self::constant_force_from()
+			? ( '1' === (string) $stored['force_from'] ? '1' : '0' )
+			: ( empty( $input['force_from'] ) ? '0' : '1' );
 
 		$errors = array();
 		$smtp   = B61_Email_SMTP::sanitize( $input, self::settings(), 'site', $errors );
@@ -654,7 +741,7 @@ class B61_Module_Email extends B61_Toolkit_Module {
 			array(
 				'from_name'  => self::clean_header_text( sanitize_text_field( (string) ( $input['from_name'] ?? '' ) ) ),
 				'from_email' => $email,
-				'force_from' => empty( $input['force_from'] ) ? '0' : '1',
+				'force_from' => $force,
 			),
 			$smtp
 		);
@@ -718,10 +805,26 @@ class B61_Module_Email extends B61_Toolkit_Module {
 					<td><input type="text" class="regular-text" id="b61-email-from-name" name="<?php echo esc_attr( $key ); ?>[from_name]" value="<?php echo esc_attr( $s['from_name'] ); ?>" placeholder="<?php echo esc_attr( self::site_title() ); ?>" />
 					<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: General Settings URL */ __( 'Leave blank to use the Site Title (<a href="%s">Settings → General</a>). It\'s read each time an email is sent, so renaming the site renames the sender.', 'b61-toolkit' ), esc_url( admin_url( 'options-general.php' ) ) ), array( 'a' => array( 'href' => true ) ) ); ?></p></td></tr>
 				<tr><th scope="row"><label for="b61-email-from-email"><?php esc_html_e( 'From email', 'b61-toolkit' ); ?></label></th>
-					<td><input type="email" class="regular-text" id="b61-email-from-email" name="<?php echo esc_attr( $key ); ?>[from_email]" value="<?php echo esc_attr( $s['from_email'] ); ?>" placeholder="<?php echo esc_attr( self::sending_address() ); ?>" />
-					<p class="description"><?php esc_html_e( 'Leave blank to use the SMTP username (when it\'s an address), or WordPress\'s default address without SMTP. Use an address on this site\'s own domain — with SMTP, usually the mailbox you sign in with — so it isn\'t marked as spam.', 'b61-toolkit' ); ?></p></td></tr>
+					<td>
+					<?php if ( '' !== self::constant_from_email() ) : ?>
+						<code id="b61-email-from-email"><?php echo esc_html( self::constant_from_email() ); ?></code>
+						<span class="description" style="margin-left:.5em;"><?php esc_html_e( 'Set in wp-config', 'b61-toolkit' ); ?></span>
+					<?php else : ?>
+						<input type="email" class="regular-text" id="b61-email-from-email" name="<?php echo esc_attr( $key ); ?>[from_email]" value="<?php echo esc_attr( $s['from_email'] ); ?>" placeholder="<?php echo esc_attr( self::sending_address() ); ?>" />
+						<p class="description"><?php esc_html_e( 'Leave blank to use the SMTP username (when it\'s an address), or WordPress\'s default address without SMTP. Use an address on this site\'s own domain — with SMTP, usually the mailbox you sign in with — so it isn\'t marked as spam.', 'b61-toolkit' ); ?></p>
+						<?php if ( self::constant_from_email_invalid() ) : ?>
+							<p class="description" style="color:#b32d2e;"><?php esc_html_e( 'B61_EMAIL_FROM in wp-config.php is empty or not a valid address, so it is ignored.', 'b61-toolkit' ); ?></p>
+						<?php endif; ?>
+					<?php endif; ?>
+					</td></tr>
 				<tr><th scope="row"><?php esc_html_e( 'Force sender', 'b61-toolkit' ); ?></th>
-					<td><label><input type="checkbox" name="<?php echo esc_attr( $key ); ?>[force_from]" value="1" <?php checked( '1', $s['force_from'] ); ?> /> <?php esc_html_e( 'Use this name and address for every email, even when a form or plugin sets its own', 'b61-toolkit' ); ?></label>
+					<td>
+					<?php if ( null !== self::constant_force_from() ) : ?>
+						<code><?php echo esc_html( self::constant_force_from() ? __( 'On', 'b61-toolkit' ) : __( 'Off', 'b61-toolkit' ) ); ?></code>
+						<span class="description" style="margin-left:.5em;"><?php esc_html_e( 'Set in wp-config', 'b61-toolkit' ); ?></span>
+					<?php else : ?>
+						<label><input type="checkbox" name="<?php echo esc_attr( $key ); ?>[force_from]" value="1" <?php checked( '1', $s['force_from'] ); ?> /> <?php esc_html_e( 'Use this name and address for every email, even when a form or plugin sets its own', 'b61-toolkit' ); ?></label>
+					<?php endif; ?>
 					<p class="description"><?php esc_html_e( 'Off: only email WordPress would send as "WordPress" changes; forms keep their own From name. On: everything is sent as above. Either way, when sending through SMTP a From address on another domain (such as a visitor\'s, on a form notification) is replaced, since the mail server would refuse it, and that address becomes the Reply-To.', 'b61-toolkit' ); ?></p></td></tr>
 			</table>
 
@@ -863,3 +966,5 @@ class B61_Module_Email extends B61_Toolkit_Module {
 		<?php
 	}
 }
+
+add_filter( 'b61_toolkit_module_default', array( 'B61_Module_Email', 'filter_module_default' ), 10, 2 );

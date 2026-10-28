@@ -77,6 +77,22 @@ Each setting comes from the constant first, then **Network Admin → B61 Toolkit
 - **Email Log** tab: the last 100 emails from the past 30 days (`b61_email_log_days` filter; 0 keeps them by count only) — time, recipients, subject, sent or failed, the error, how it was sent and which plugin or theme sent it — filterable by status, with **Clear log**. Message contents are not kept. Admins get a notice when 3 or more emails fail within 24 hours.
 - **Fluent SMTP, WP Mail SMTP, Post SMTP or Easy WP SMTP active**: the Toolkit doesn't touch how mail is sent (the sender name still applies) and says to deactivate the other plugin. **Import from Fluent SMTP** copies Fluent's SMTP connection, including its saved password, and works whether Fluent is still active or not.
 
+### Zero-touch setup from wp-config
+
+The sender can be set in `wp-config.php` too, so a network's new subsites send correctly without anyone opening their Email screen:
+
+```php
+define( 'B61_EMAIL_FROM', 'office@example.org' ); // From address for every site
+define( 'B61_EMAIL_FORCE_FROM', true );           // Force sender on (false = off)
+define( 'B61_EMAIL_ENABLE', true );               // optional: Email feature on for sites with nothing saved
+```
+
+- `B61_EMAIL_FROM`, when it's a valid address, is the From address and wins over the site's From email. Empty or invalid, it's ignored (the Email screen says so) and the usual order applies: site setting, SMTP username when it's an address, then WordPress's default.
+- `B61_EMAIL_FORCE_FROM` (true or false) wins over the site's Force sender checkbox.
+- Either one shows its field read-only with "Set in wp-config". Saving the screen leaves the site's own stored value alone, so removing the constant brings it back.
+- The From name has no constant: blank means each site's own Site Title.
+- `B61_EMAIL_ENABLE` switches the Email feature on for any site that has nothing saved for it, such as a new subsite. A site where Email was switched off and saved stays off. On a single site the feature list is saved when the plugin is activated, so switch it on there in Features.
+
 Moving a site off Fluent SMTP: switch Email on, **Import from Fluent SMTP**, deactivate Fluent SMTP, send a test email, then submit a form to check it still arrives.
 
 SPF, DKIM and DMARC are still set up per domain at launch.
