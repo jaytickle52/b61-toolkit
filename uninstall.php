@@ -49,6 +49,8 @@ function b61_toolkit_uninstall_site() {
 	delete_option( 'b61_seo_404_log' );
 	delete_option( 'b61_seo_redirect_hits' );
 	delete_transient( 'b61_llms_txt' );
+	delete_option( 'b61_toolkit_ask_ai' );
+	delete_transient( 'b61_ask_ai_seo_counts' );
 	// Redirects (b61_seo_redirects) and per-page SEO fields are kept: removing
 	// them would break old links and lose written descriptions.
 	// Media folders (terms) stay, like other content.
