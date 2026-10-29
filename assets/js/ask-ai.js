@@ -102,6 +102,17 @@
 		var href = abs.href;
 		// Admin screens on this site only (no "../" escapes: URL() resolved them).
 		if ( 0 === href.indexOf( admin ) ) {
+			// Screens only: nothing that could perform an action on a click.
+			var file = abs.pathname.split( '/' ).pop();
+			var params = abs.searchParams;
+			var action = params.get( 'action' );
+			if (
+				/^(admin-post|admin-ajax|async-upload)\.php$/.test( file ) ||
+				params.has( '_wpnonce' ) || params.has( 'nonce' ) || params.has( '_ajax_nonce' ) ||
+				( action && 'edit' !== action )
+			) {
+				return null;
+			}
 			return { href: href, external: false };
 		}
 		for ( var i = 0; i < sources.length; i++ ) {
@@ -246,7 +257,12 @@
 			if ( 'working' === res.type && steps < MAX_STEPS ) {
 				steps++;
 				item.status = res.status || t.thinking;
-				render();
+				// Only the pending answer changes, so focus elsewhere stays put.
+				var status = log.querySelector( '.b61-ask__status' );
+				if ( status ) {
+					status.textContent = item.status;
+				}
+				announce( item.status );
 				return post( '', { message_id: res.message_id } ).then( handle );
 			}
 			delete item.pending;
@@ -320,7 +336,7 @@
 			var box = el( 'div', { className: 'b61-ask__msg b61-ask__msg--a' } );
 			box.appendChild( el( 'span', { className: 'screen-reader-text', text: ( t.assistant || '' ) + ': ' } ) );
 			if ( item.pending ) {
-				box.appendChild( el( 'p', { className: 'b61-ask__working' }, [ el( 'span', { className: 'b61-ask__dots', 'aria-hidden': 'true' } ), item.status || t.thinking ] ) );
+				box.appendChild( el( 'p', { className: 'b61-ask__working' }, [ el( 'span', { className: 'b61-ask__dots', 'aria-hidden': 'true' } ), el( 'span', { className: 'b61-ask__status', text: item.status || t.thinking } ) ] ) );
 			} else if ( item.error ) {
 				box.className += ' b61-ask__msg--error';
 				box.appendChild( el( 'p', { text: item.error } ) );
@@ -444,6 +460,11 @@
 			}
 			// Keep keystrokes away from the page builder's shortcuts.
 			e.stopPropagation();
+		} );
+		[ 'keyup', 'keypress', 'input', 'paste', 'copy', 'cut' ].forEach( function ( type ) {
+			panel.addEventListener( type, function ( e ) {
+				e.stopPropagation();
+			} );
 		} );
 		render();
 	}

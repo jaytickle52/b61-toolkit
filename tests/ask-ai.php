@@ -13,15 +13,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit( 1 );
 }
 
-$b61_fail = 0;
-$b61_pass = 0;
+// wp eval-file runs this inside a function: keep the tally in $GLOBALS.
+$GLOBALS['b61_pass'] = 0;
+$GLOBALS['b61_fail'] = 0;
 function b61_t( $ok, $label ) {
-	global $b61_fail, $b61_pass;
 	if ( $ok ) {
-		++$b61_pass;
+		++$GLOBALS['b61_pass'];
 		echo "  ok    {$label}\n";
 	} else {
-		++$b61_fail;
+		++$GLOBALS['b61_fail'];
 		echo "  FAIL  {$label}\n";
 	}
 }
@@ -170,6 +170,12 @@ list( $r, $err ) = B61_Ask_AI_Site::run_tool( 'list_plugins', array() );
 b61_t( ! $err && ! empty( $r['note'] ), 'editors only see active plugins' );
 list( $r, $err ) = B61_Ask_AI_Site::run_tool( 'drop_everything', array() );
 b61_t( $err, 'unknown tools are refused' );
+b61_t( ! in_array( 'get_toolkit_settings', B61_Ask_AI_Site::tool_names(), true ) && ! in_array( 'get_seo_findings', B61_Ask_AI_Site::tool_names(), true ), 'editors aren\'t offered admin-only tools' );
+b61_t( ! isset( B61_Ask_AI_Site::snapshot()['seo']['findings'] ), 'editors\' snapshot has no SEO Report counts' );
+$req_id = wp_insert_post( array( 'post_type' => 'user_request', 'post_status' => 'request-pending', 'post_title' => 'someone@example.test', 'post_name' => 'export_personal_data' ) );
+list( $r, $err ) = B61_Ask_AI_Site::run_tool( 'get_page_outline', array( 'post_id' => $req_id ) );
+b61_t( $err && false === strpos( wp_json_encode( $r ), 'someone@example.test' ), 'outlines refuse private system types (privacy requests)' );
+wp_delete_post( $req_id, true );
 wp_set_current_user( $admin_id );
 if ( is_multisite() ) {
 	grant_super_admin( $admin_id );
@@ -206,7 +212,9 @@ $first = $b61_requests[0];
 b61_t( 'https://basecamp.test/ai/site/chat' === $first['url'], 'calls Base Camp chat' );
 b61_t( 'Bearer b61ai_test_token_abcdefghijklmnopqrstuvwxyz' === $first['headers']['Authorization'], 'sends the token server to server' );
 b61_t( false === strpos( wp_json_encode( $data ), 'b61ai_test_token' ), 'the token never reaches the browser' );
-b61_t( 'Eddie Editor' === $first['body']['user']['name'] && 'editor' === $first['body']['user']['role'], 'sends name and role only' );
+b61_t( 'Eddie Editor' === $first['body']['user']['name'] && 'editor' === $first['body']['user']['role'], 'sends name and role' );
+b61_t( 64 === strlen( $first['body']['user']['key'] ) && B61_Module_Ask_AI::user_key( $editor_id ) === $first['body']['user']['key'], 'sends a salted user key, not the user ID' );
+b61_t( untrailingslashit( get_option( 'home' ) ) === $first['body']['site_url'], 'sends the Site Address option' );
 b61_t( false === strpos( wp_json_encode( $first['body'] ), '@example.test' ), 'no user emails sent' );
 list( $status, $data ) = b61_rest( 'ask', array( 'message_id' => 'm1' ), $editor_id );
 $second                = $b61_requests[1]['body'];
@@ -216,6 +224,16 @@ list( $status, $data ) = b61_rest( 'ask', array( 'message_id' => 'm1' ), $editor
 b61_t( 'error' === $data['type'] && 'expired' === $data['code'], 'results can\'t be replayed' );
 list( $status, $data ) = b61_rest( 'ask', array( 'message_id' => 'm1' ), $admin_id );
 b61_t( 'error' === $data['type'], 'another person can\'t continue the question' );
+
+$b61_requests = array();
+$b61_replies  = array(
+	array( 200, array( 'type' => 'tool_use', 'conversation_id' => 'c2', 'message_id' => 'm2', 'calls' => array() ) ),
+	array( 200, array( 'type' => 'answer', 'conversation_id' => 'c2', 'message_id' => 'm2', 'answer' => 'Done thinking.', 'sources' => array() ) ),
+);
+list( $status, $data ) = b61_rest( 'ask', array( 'question' => 'Long one?' ), $editor_id );
+b61_t( 'working' === $data['type'] && 'm2' === $data['message_id'], 'a time hand-back from Base Camp comes back as "working"' );
+list( $status, $data ) = b61_rest( 'ask', array( 'message_id' => 'm2' ), $editor_id );
+b61_t( 'answer' === $data['type'] && array() === $b61_requests[1]['body']['results'], 'asking again sends no results' );
 
 $b61_replies = array( array( 429, array( 'type' => 'error', 'code' => 'limit', 'message' => 'This site has reached its Ask AI limit for this month. Contact Banner 61 if you need more.' ) ) );
 list( $status, $data ) = b61_rest( 'ask', array( 'question' => 'Again?' ), $editor_id );
@@ -300,7 +318,7 @@ foreach ( array( 'b61_toolkit_email' => $saved_email, 'banner_ai_alt_text_option
 }
 delete_transient( 'b61_ask_ai_seo_counts' );
 
-echo "\n{$b61_pass} passed, {$b61_fail} failed\n";
-if ( $b61_fail ) {
+echo "\n" . $GLOBALS['b61_pass'] . ' passed, ' . $GLOBALS['b61_fail'] . " failed\n";
+if ( $GLOBALS['b61_fail'] ) {
 	exit( 1 );
 }

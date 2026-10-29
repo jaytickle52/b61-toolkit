@@ -66,7 +66,9 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 		return array(
 			self::OPTION => array(
 				'sanitize' => array( $this, 'sanitize' ),
-				'private'  => array( 'token', 'clear_token' ),
+				// The address is private too: an imported file must not be able
+				// to send this site's token to another server.
+				'private'  => array( 'token', 'clear_token', 'url' ),
 			),
 		);
 	}
@@ -145,7 +147,7 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 
 	/** Base Camp's address: constant, this site, the network, then the default. */
 	public static function endpoint() {
-		if ( defined( 'B61_ASK_AI_URL' ) && '' !== trim( (string) B61_ASK_AI_URL ) ) {
+		if ( defined( 'B61_ASK_AI_URL' ) && 0 === stripos( trim( (string) B61_ASK_AI_URL ), 'https://' ) ) {
 			return untrailingslashit( trim( (string) B61_ASK_AI_URL ) );
 		}
 		$site = trim( (string) self::options()['url'] );
@@ -161,6 +163,20 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 
 	public static function configured() {
 		return '' !== self::token();
+	}
+
+	/**
+	 * This site's address as registered in Base Camp: the Site Address
+	 * option itself, not home_url(), which translation plugins filter
+	 * (language prefixes would not match).
+	 */
+	public static function site_url() {
+		return untrailingslashit( (string) get_option( 'home' ) );
+	}
+
+	/** A stable, salted id for this person on this site (not reversible). */
+	public static function user_key( $user_id ) {
+		return hash_hmac( 'sha256', 'b61-ask-ai|' . (int) $user_id, wp_salt( 'auth' ) );
 	}
 
 	public function register_settings() {
@@ -313,7 +329,7 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'b61-toolkit' ), 403 );
 		}
 		check_admin_referer( self::TEST_ACTION );
-		$res = self::call( 'ping', array( 'site_url' => home_url( '/' ) ) );
+		$res = self::call( 'ping', array( 'site_url' => self::site_url() ) );
 		if ( 'ok' === ( $res['type'] ?? '' ) ) {
 			$used = isset( $res['used_this_month'] ) ? (int) $res['used_this_month'] : 0;
 			$max  = isset( $res['monthly_limit'] ) ? (int) $res['monthly_limit'] : 0;
@@ -355,7 +371,9 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 		$res = wp_remote_post(
 			self::endpoint() . '/ai/site/' . $path,
 			array(
-				'timeout'     => 55,
+				// Base Camp hands back within about 75 seconds (one Claude call
+				// past its own 20-second budget at most).
+				'timeout'     => 75,
 				'redirection' => 0,
 				'headers'     => array(
 					'Authorization' => 'Bearer ' . $token,
@@ -480,7 +498,7 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 			return rest_ensure_response( self::call( 'chat', array() ) );
 		}
 		if ( function_exists( 'set_time_limit' ) ) {
-			@set_time_limit( 90 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- may be disabled on the host; harmless if so.
+			@set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- may be disabled on the host; harmless if so.
 		}
 		$user       = wp_get_current_user();
 		$message_id = (string) $request->get_param( 'message_id' );
@@ -496,8 +514,9 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 			$res = self::call(
 				'chat',
 				array(
-					'site_url'   => home_url( '/' ),
+					'site_url'   => self::site_url(),
 					'message_id' => $message_id,
+					'user'       => array( 'key' => self::user_key( $user->ID ) ),
 					'results'    => $pending['results'],
 				)
 			);
@@ -514,13 +533,14 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 			$res    = self::call(
 				'chat',
 				array(
-					'site_url'        => home_url( '/' ),
+					'site_url'        => self::site_url(),
 					'question'        => $question,
 					'conversation_id' => sanitize_text_field( (string) $request->get_param( 'conversation_id' ) ),
 					'snapshot'        => B61_Ask_AI_Site::snapshot( is_array( $screen ) ? $screen : array() ),
 					'user'            => array(
 						'name' => $user->display_name,
 						'role' => B61_Ask_AI_Site::role( $user ),
+						'key'  => self::user_key( $user->ID ),
 					),
 					'tools'           => B61_Ask_AI_Site::tool_names(),
 				)
@@ -529,12 +549,34 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 		}
 
 		if ( 'tool_use' === ( $res['type'] ?? '' ) ) {
+			$calls = (array) ( $res['calls'] ?? array() );
+			$mid   = (string) ( $res['message_id'] ?? '' );
+			if ( ! $calls ) {
+				// Base Camp ran out of time for this request and is still
+				// thinking: ask again with nothing new (not a lookup round).
+				set_transient(
+					self::pending_key( $user->ID, $mid ),
+					array(
+						'results' => array(),
+						'rounds'  => $rounds,
+					),
+					15 * MINUTE_IN_SECONDS
+				);
+				return rest_ensure_response(
+					array(
+						'type'            => 'working',
+						'message_id'      => $mid,
+						'conversation_id' => (string) ( $res['conversation_id'] ?? '' ),
+						'status'          => __( 'Still thinking…', 'b61-toolkit' ),
+					)
+				);
+			}
 			if ( $rounds >= self::MAX_ROUNDS ) {
 				return rest_ensure_response( self::error( __( 'That took too many lookups. Try a narrower question.', 'b61-toolkit' ), 'rounds' ) );
 			}
 			$results = array();
 			$first   = '';
-			foreach ( array_slice( (array) ( $res['calls'] ?? array() ), 0, 8 ) as $call ) {
+			foreach ( array_slice( $calls, 0, 8 ) as $call ) {
 				$name = isset( $call['name'] ) ? sanitize_key( (string) $call['name'] ) : '';
 				if ( '' === $first ) {
 					$first = $name;
@@ -546,7 +588,6 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 					'is_error'    => (bool) $is_error,
 				);
 			}
-			$mid = (string) ( $res['message_id'] ?? '' );
 			set_transient(
 				self::pending_key( $user->ID, $mid ),
 				array(
@@ -595,7 +636,8 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 		$res    = self::call(
 			'rate',
 			array(
-				'site_url'   => home_url( '/' ),
+				'site_url'   => self::site_url(),
+				'user'       => array( 'key' => self::user_key( get_current_user_id() ) ),
 				'message_id' => sanitize_text_field( (string) $request->get_param( 'message_id' ) ),
 				'rating'     => in_array( $rating, array( 'up', 'down' ), true ) ? $rating : null,
 			)

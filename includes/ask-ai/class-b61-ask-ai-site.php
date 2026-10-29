@@ -25,11 +25,15 @@ class B61_Ask_AI_Site {
 	/** Longest tool result, in characters (Base Camp clips again). */
 	const MAX_RESULT = 10000;
 
-	/** Read-only tools this version offers. */
+	/** Read-only tools this version offers to the current person. */
 	public static function tool_names() {
-		$names = array( 'search_content', 'get_page_outline', 'list_menus', 'get_toolkit_settings', 'list_plugins' );
-		if ( b61_toolkit()->is_enabled( 'seo' ) && class_exists( 'B61_SEO_Report' ) ) {
-			$names[] = 'get_seo_findings';
+		$names = array( 'search_content', 'get_page_outline', 'list_menus', 'list_plugins' );
+		// Settings and the SEO Report are Administrator screens.
+		if ( current_user_can( 'manage_options' ) ) {
+			$names[] = 'get_toolkit_settings';
+			if ( b61_toolkit()->is_enabled( 'seo' ) && class_exists( 'B61_SEO_Report' ) ) {
+				$names[] = 'get_seo_findings';
+			}
 		}
 		if ( self::fluent_forms_active() ) {
 			$names[] = 'list_forms';
@@ -202,7 +206,8 @@ class B61_Ask_AI_Site {
 	/** SEO Report counts by finding (cached 10 minutes; the report is heavy). */
 	public static function seo_summary() {
 		$out = array( 'hiddenFromGoogle' => '0' === (string) get_option( 'blog_public' ) );
-		if ( ! b61_toolkit()->is_enabled( 'seo' ) || ! class_exists( 'B61_SEO_Report' ) ) {
+		// The SEO Report itself is for Administrators.
+		if ( ! current_user_can( 'manage_options' ) || ! b61_toolkit()->is_enabled( 'seo' ) || ! class_exists( 'B61_SEO_Report' ) ) {
 			return $out;
 		}
 		$counts = get_transient( 'b61_ask_ai_seo_counts' );
@@ -367,7 +372,7 @@ class B61_Ask_AI_Site {
 
 	public static function page_outline( $post_id ) {
 		$post = $post_id ? get_post( $post_id ) : null;
-		if ( ! $post || ! current_user_can( 'read_post', $post->ID ) ) {
+		if ( ! $post || ! self::outline_type( $post->post_type ) || ! current_user_can( 'read_post', $post->ID ) ) {
 			return array( 'No page with that ID that you can see.', true );
 		}
 		$out = array(
@@ -395,6 +400,16 @@ class B61_Ask_AI_Site {
 		}
 		$out['items'] = array_slice( $lines, 0, 150 );
 		return array( self::cap( $out ), false );
+	}
+
+	/**
+	 * Content types an outline may read: public ones, plus page-builder
+	 * templates and reusable blocks. Never private system types (such as
+	 * privacy requests, whose title is an email address).
+	 */
+	public static function outline_type( $type ) {
+		$builder = array( 'wp_block', 'wp_template', 'wp_template_part', 'elementor_library', 'breakdance_template', 'breakdance_header', 'breakdance_footer', 'breakdance_block', 'breakdance_popup' );
+		return in_array( $type, (array) apply_filters( 'b61_ask_ai_outline_types', $builder ), true ) || is_post_type_viewable( $type );
 	}
 
 	/** Short label for a Breakdance element type: "EssentialElements\\Heading" → "Heading". */
@@ -715,7 +730,9 @@ class B61_Ask_AI_Site {
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix; no user input.
 		$forms = $wpdb->get_results( "SELECT id, title, status FROM {$forms_table} ORDER BY id ASC LIMIT 50", ARRAY_A );
-		$show_recipients = (bool) apply_filters( 'b61_ask_ai_form_recipients', true );
+		// Recipient addresses only for people who could see them in Fluent
+		// Forms' own settings (Administrators).
+		$show_recipients = current_user_can( 'manage_options' ) && (bool) apply_filters( 'b61_ask_ai_form_recipients', true );
 		$used            = self::form_usage();
 		$items           = array();
 		foreach ( (array) $forms as $f ) {
