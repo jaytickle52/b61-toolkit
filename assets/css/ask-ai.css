@@ -367,6 +367,35 @@ html.b61-dark .b61-ask:not(.b61-ask--builder) {
 	top: 2px;
 }
 
+/* Phones: WordPress hides most admin bar items; keep Ask, as an icon. */
+@media screen and (max-width: 782px) {
+	#wpadminbar li#wp-admin-bar-b61-ask-ai {
+		display: block;
+	}
+	#wpadminbar #wp-admin-bar-b61-ask-ai > .ab-item {
+		width: 52px;
+		padding: 0;
+		text-align: center;
+	}
+	#wpadminbar #wp-admin-bar-b61-ask-ai .ab-icon {
+		margin: 0;
+		padding: 0;
+	}
+	#wpadminbar #wp-admin-bar-b61-ask-ai .ab-icon::before {
+		top: 0;
+		width: 52px;
+		font: normal 32px/1 dashicons !important;
+		text-align: center;
+	}
+	#wpadminbar #wp-admin-bar-b61-ask-ai .ab-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+	}
+}
+
 /* Breakdance editor button, above File Picker's Media button. */
 .b61-ask-bd-btn {
 	position: fixed;
