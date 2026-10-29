@@ -1,7 +1,7 @@
 <?php
 /**
  * Multisite support: a Network Admin screen with network-wide settings (the
- * shared OpenAI key, the SMTP connection for Email) and a read-only overview of which features each site has on.
+ * shared OpenAI key, the SMTP connection for Email, the Ask AI token) and a read-only overview of which features each site has on.
  *
  * Only loaded on multisite. Per-site feature switches stay on each site's own
  * B61 Toolkit → Features screen.
@@ -32,7 +32,14 @@ class B61_Toolkit_Network {
 	public static function settings() {
 		return wp_parse_args(
 			(array) get_site_option( self::OPTION, array() ),
-			array_merge( array( 'openai_api_key' => '' ), self::smtp_defaults() )
+			array_merge(
+				array(
+					'openai_api_key' => '',
+					'ask_ai_token'   => '',
+					'ask_ai_url'     => '',
+				),
+				self::smtp_defaults()
+			)
 		);
 	}
 
@@ -69,6 +76,10 @@ class B61_Toolkit_Network {
 		} elseif ( isset( $input['openai_api_key'] ) && '' !== trim( $input['openai_api_key'] ) ) {
 			// Blank means "keep the saved key" — the key is never echoed back into the form.
 			$settings['openai_api_key'] = trim( sanitize_text_field( $input['openai_api_key'] ) );
+		}
+
+		if ( class_exists( 'B61_Module_Ask_AI' ) ) {
+			$settings = B61_Module_Ask_AI::sanitize_network( $input, $settings );
 		}
 
 		$errors = array();
@@ -132,6 +143,9 @@ class B61_Toolkit_Network {
 					<table class="form-table" role="presentation">
 						<?php B61_Email_SMTP::render_fields( self::OPTION, 'network', $settings ); ?>
 					</table>
+				<?php endif; ?>
+				<?php if ( class_exists( 'B61_Module_Ask_AI' ) ) : ?>
+					<?php B61_Module_Ask_AI::render_network_fields( self::OPTION, $settings ); ?>
 				<?php endif; ?>
 				<?php submit_button( __( 'Save Network Settings', 'b61-toolkit' ) ); ?>
 			</form>
