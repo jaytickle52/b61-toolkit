@@ -32,6 +32,7 @@ Banner 61's modular site toolkit for WordPress. Each feature is a module you swi
 | Admin Theme | — (Banner 61 colours in wp-admin for everyone, rounded controls, per-person light / dark / match-system switch) |
 | AI Alt Text | Alt Magic |
 | Ask AI | — (an "Ask" panel where Editors and Administrators chat about their own site; answers from Banner 61's Base Camp) |
+| Analytics | — (a plain-English view of the site's Google Analytics in WordPress; the numbers come from Banner 61's Base Camp) |
 | Balanced headlines / Paragraph orphans | — (pairs with Banner 61 Elements) |
 
 ## SEO
@@ -171,17 +172,33 @@ Redirects → *Moving from an old site*: give the old sitemap's address (followe
 
 SEO → *Write with AI* lists published items of one content type — missing a description, missing a title, or all — 40 per page. **Write suggestions** asks AI (the AI Alt Text OpenAI key) for a title and description for each ticked item, one at a time, from the page's own text (the published page for Breakdance pages). Suggestions appear in editable fields beside what search engines see now; nothing changes until **Save the ticked pages**. Titles are saved as `<title> %sep% %sitename%` so the separator and site name stay consistent. Administrators only.
 
+## Connect to Banner 61
+
+Ask AI and Analytics talk to Banner 61's Base Camp through one connection: a site token from Base Camp → Ask AI → Connected sites. With either feature on, **B61 Toolkit → Connect to Banner 61** holds the token and has **Test connection**, which checks the token and the site's address and says which features Base Camp has on for the site. Prefer `wp-config.php`, which also hides the field:
+
+```php
+define( 'B61_SITE_TOKEN', 'b61ai_…' );
+define( 'B61_BASECAMP_URL', 'https://…' ); // only to point at another Base Camp
+```
+
+The older names still work: `B61_ASK_AI_TOKEN` / `B61_ASK_AI_URL`, and a token saved on the old Ask AI screen (it moves to the shared setting the next time the screen is saved). On multisite the token and address are network settings (Network Admin → B61 Toolkit → Connect to Banner 61), with an optional per-site override; register the network in Base Camp as a multisite network so its subsites (subdomains or sub-folders) share the token. A subsite on its own mapped domain needs its own site and token. The address checked is the Site Address (Settings → General), not a translated home URL. Only super admins (single site: administrators) see the screen.
+
+## Analytics
+
+Switch on **Analytics** in Features (it starts off). Banner 61 connects the site's Google Analytics in Base Camp (the GA4 property ID, plus a hostname filter when several sites share one property); nothing else is set up in WordPress beyond the connection above. Base Camp reads GA with Banner 61's own service account (read-only); its key never comes to the site.
+
+- **Where it shows.** **Dashboard → Analytics** ("Website analytics") for Editors and Administrators, with 7 / 30 / 90-day buttons: summary tiles (Visitors, New visitors, Visits, Page views, Engaged visits, Average visit length, Key actions), each with its change against the same number of days before (arrow and words, not colour alone) and a one-line explanation; visitors over time; the 25 top pages (views and change, visitors, time on page per visitor, visits that started there, key actions, how people arrived, and an Edit link when the page is on this site); where visitors come from (in plain English) and the websites that send them; top cities; phone vs. computer; key actions and the pages they happen on. With the Client Dashboard on, a **Website visitors** card shows visitors, a sparkline, the top 3 pages and top 3 sources.
+- **Loading.** Pages load first and the numbers arrive over AJAX. Base Camp keeps each report 12 hours; the site keeps Base Camp's answer an hour per range, and Administrators get a **Refresh** link that skips the site's hour once. If a request fails, the last numbers stay up with a "couldn't refresh" note.
+- **Not connected or broken.** "Analytics isn't connected for this site yet" when there's no token or no GA property. If GA refuses (for example the service account was removed as a Viewer), Administrators see what to fix and Editors see "Analytics is temporarily unavailable."
+- **Network Admin.** The features table has an **Analytics connection** column: Connected, Not connected or Needs attention, from each site's last answer. Read-only; connecting happens in Base Camp.
+- **Developers.** `b61_analytics_capability` (default `edit_pages`) and `b61_analytics_event_labels` (`event_name => label`, for a site's custom key events; known ones: `generate_lead` Form sent, `form_submit` Form submitted, `file_download` File downloaded, `click` Link clicked; others read as "Schedule tour click").
+
 ## Ask AI
 
-Switch on **Ask AI** in Features (it starts off), then add the site token from Base Camp → Ask AI → Sites. Editors and Administrators get an **Ask** button in the admin bar (wp-admin and the front end) and in the Breakdance editor (bottom-left, above Media). They ask how to do something on *their* website and get short numbered steps, a link to the right admin screen and the guide, doc or video that covers it. It guides only: it never changes anything and says so when asked to.
+Switch on **Ask AI** in Features (it starts off), then add the site token (see Connect to Banner 61 above). Editors and Administrators get an **Ask** button in the admin bar (wp-admin and the front end) and in the Breakdance editor (bottom-left, above Media). They ask how to do something on *their* website and get short numbered steps, a link to the right admin screen and the guide, doc or video that covers it. It guides only: it never changes anything and says so when asked to.
 
 - **Where the AI lives.** Base Camp holds the Claude key, the documentation (this README, the Banner 61 guides, Breakdance, Elementor and Fluent Forms docs, and team notes), usage limits and the conversation log. The site only holds its token.
-- **Token.** Prefer `wp-config.php`, which also hides the field:
-  ```php
-  define( 'B61_ASK_AI_TOKEN', 'b61ai_…' );
-  define( 'B61_ASK_AI_URL', 'https://…' ); // only to point at another Base Camp
-  ```
-  On multisite the token and address are network settings (Network Admin → B61 Toolkit → Ask AI), with an optional per-site override; register the network in Base Camp as a multisite network so its subsites (subdomains or sub-folders) share the token. A subsite on its own mapped domain needs its own site and token. The address checked is the Site Address (Settings → General), not a translated home URL. Only super admins (single site: administrators) see the settings screen. **Test connection** checks the token and the site's address.
+- **Token.** The site's connection token (Connect to Banner 61 above). B61 Toolkit → Ask AI describes what it sends and links to the connection screen.
 - **What it sees.** With each question: site name and address, WordPress and PHP versions, theme and page builder, active plugins (network-activated and must-use included; Hide Agency Tools' plugins stay hidden from non-team people), which Toolkit features are on, the screen you're on (and the post being edited), your role, Org Details name and contact page, SEO Report counts and the "Hidden from Google" status, menu names and page counts. While answering it can look things up, as you: search your content, outline a page (Breakdance, Elementor or blocks), list menus, read one feature's settings (an allow-list, never keys, passwords or SMTP details; Administrators only), the SEO Report (Administrators), plugins, and Fluent Forms (names and where each is used; who each form emails only for Administrators; never entries). Outlines only read public content types and builder templates. It never sees form entries, passwords, API keys or the list of users.
 - **Limits.** 20 questions per person per 10 minutes, at most 5 lookup rounds per question, and a monthly limit per site set in Base Camp. Questions and answers aren't stored in WordPress; the panel keeps them for the browser session. Developers: `b61_ask_ai_settings_allowlist` and `b61_ask_ai_form_recipients` (false to leave form recipients out).
 

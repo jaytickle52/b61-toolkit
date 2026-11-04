@@ -1,0 +1,146 @@
+/* B61 Toolkit Analytics: the Dashboard card and Dashboard → Analytics. Light and Admin Theme dark. */
+.b61-an {
+	--b61an-text: #1d2327;
+	--b61an-muted: #50575e;
+	--b61an-line: #dcdcde;
+	--b61an-surface: #fff;
+	--b61an-surface-alt: #f6f7f7;
+	--b61an-up: #00702e;
+	--b61an-down: #b32d2e;
+	--b61an-accent: #3f3b4c;
+	--b61an-t0: #3f3b4c;
+	--b61an-t1: #b24142;
+	--b61an-t2: #2271b1;
+	--b61an-t3: #996800;
+	--b61an-t4: #00702e;
+	--b61an-t5: #8c8f94;
+	color: var(--b61an-text);
+}
+html.b61-dark .b61-an {
+	--b61an-text: #f0f1ee;
+	--b61an-muted: #c9c6d3;
+	--b61an-line: #3f3b4c;
+	--b61an-surface: #2a2733;
+	--b61an-surface-alt: #24212d;
+	--b61an-up: #7ee2a8;
+	--b61an-down: #f6abab;
+	--b61an-accent: #f39192;
+	--b61an-t0: #f39192;
+	--b61an-t1: #c9c6d3;
+	--b61an-t2: #8fc1f0;
+	--b61an-t3: #f2cc6b;
+	--b61an-t4: #7ee2a8;
+	--b61an-t5: #8c8799;
+}
+
+.b61-an-loading,
+.b61-an-muted,
+.b61-an-vs,
+.b61-an-tile-help,
+.b61-an-th-help,
+.b61-an-path {
+	color: var(--b61an-muted);
+}
+.b61-an-muted { display: block; font-size: 12px; }
+.b61-an-empty { margin: 4px 0; }
+.b61-an-note {
+	background: var(--b61an-surface-alt);
+	border-left: 4px solid var(--b61an-t3);
+	padding: 6px 12px;
+	margin: 0 0 12px;
+}
+.b61-an-note-error { border-left-color: var(--b61an-down); }
+.b61-an-note p { margin: .3em 0; }
+.b61-an-admin-only { font-size: 12px; color: var(--b61an-muted); }
+
+.b61-an-change { font-weight: 600; white-space: nowrap; font-size: 12px; }
+.b61-an-up { color: var(--b61an-up); }
+.b61-an-down { color: var(--b61an-down); }
+.b61-an-same { color: var(--b61an-muted); }
+.b61-an-vs { font-size: 12px; }
+
+/* Card */
+.b61-an-card-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.b61-an-big { font-size: 28px; font-weight: 600; line-height: 1.1; }
+.b61-an-label { color: var(--b61an-muted); }
+.b61-an-spark { width: 120px; height: 32px; color: var(--b61an-accent); flex: none; }
+.b61-an-mini { list-style: none; margin: 0; padding: 0; }
+.b61-an-mini li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; margin: 0; border-top: 1px solid var(--b61an-line); }
+.b61-an-mini li:first-child { border-top: 0; }
+.b61-an-mini-name { min-width: 0; overflow-wrap: anywhere; }
+.b61-an-mini-num { flex: none; color: var(--b61an-muted); }
+.b61-an-more { margin: 12px 0 0; text-align: right; }
+
+/* Page */
+.b61-an-wrap .b61-an-intro { max-width: 760px; }
+.b61-an-ranges { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 16px; }
+.b61-an-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 12px;
+	margin: 12px 0 20px;
+	padding: 0;
+	list-style: none;
+}
+.b61-an-tile {
+	background: var(--b61an-surface);
+	border: 1px solid var(--b61an-line);
+	border-radius: 8px;
+	padding: 12px 14px;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.b61-an-tile-label { font-weight: 600; }
+.b61-an-tile-value { font-size: 24px; font-weight: 600; line-height: 1.2; }
+.b61-an-tile-help { font-size: 12px; line-height: 1.4; }
+.b61-an-section {
+	background: var(--b61an-surface);
+	border: 1px solid var(--b61an-line);
+	border-radius: 8px;
+	padding: 14px 16px;
+	margin: 0 0 16px;
+}
+.b61-an-section h2 { margin: 0 0 10px; font-size: 15px; }
+.b61-an-section h3 { margin: 14px 0 6px; font-size: 13px; }
+.b61-an-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.b61-an-chart { width: 100%; height: auto; max-height: 220px; display: block; }
+.b61-an-chart .b61-an-line { stroke: var(--b61an-accent); stroke-width: 2.5; stroke-linejoin: round; }
+.b61-an-chart .b61-an-grid { stroke: var(--b61an-line); stroke-width: 1; }
+.b61-an-chart .b61-an-axis { fill: var(--b61an-muted); font-size: 11px; }
+.b61-an-scroll { overflow-x: auto; }
+.b61-an-pages { border-radius: 6px; }
+.b61-an-pages th.num, .b61-an-pages td.num { text-align: right; white-space: nowrap; }
+.b61-an-th-help { display: block; font-weight: 400; font-size: 11px; }
+.b61-an-page { min-width: 220px; }
+.b61-an-page-title { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.b61-an-path { display: block; background: none; padding: 0; font-size: 11px; overflow-wrap: anywhere; }
+.b61-an-edit { font-weight: 400; font-size: 12px; margin-left: 4px; }
+.b61-an-arrivals { margin-top: 6px; }
+.b61-an-arrivals summary { cursor: pointer; font-size: 12px; color: var(--b61an-muted); }
+.b61-an-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--b61an-surface-alt); margin: 8px 0 6px; }
+.b61-an-bar span { display: block; height: 100%; }
+.b61-an-bar-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; }
+.b61-an-bar-legend li { margin: 0; display: flex; align-items: center; gap: 5px; }
+.b61-an-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.b61-an-tone-0 { background: var(--b61an-t0); }
+.b61-an-tone-1 { background: var(--b61an-t1); }
+.b61-an-tone-2 { background: var(--b61an-t2); }
+.b61-an-tone-3 { background: var(--b61an-t3); }
+.b61-an-tone-4 { background: var(--b61an-t4); }
+.b61-an-tone-5 { background: var(--b61an-t5); }
+.b61-an-list { list-style: none; margin: 0; padding: 0; }
+.b61-an-list li { margin: 0 0 12px; }
+.b61-an-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.b61-an-meter { height: 6px; border-radius: 3px; background: var(--b61an-surface-alt); margin-top: 4px; overflow: hidden; }
+.b61-an-meter span { display: block; height: 100%; background: var(--b61an-accent); }
+.b61-an-foot { color: var(--b61an-muted); font-size: 12px; }
+
+html.b61-dark .b61-an-pages,
+html.b61-dark .b61-an-pages th,
+html.b61-dark .b61-an-pages td { color: var(--b61an-text); border-color: var(--b61an-line); }
+html.b61-dark .b61-an-pages.striped > tbody > :nth-child(odd) { background: var(--b61an-surface-alt); }
+html.b61-dark .b61-an-pages, html.b61-dark .b61-an-pages thead th { background: var(--b61an-surface); }
+html.b61-dark .b61-an .b61-an-path { background: none; color: var(--b61an-muted); }
+#dashboard-widgets .b61-an h3.b61-dash-h { margin: 16px 0 4px; }

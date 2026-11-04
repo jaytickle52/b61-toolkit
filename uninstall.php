@@ -51,6 +51,12 @@ function b61_toolkit_uninstall_site() {
 	delete_transient( 'b61_llms_txt' );
 	delete_option( 'b61_toolkit_ask_ai' );
 	delete_transient( 'b61_ask_ai_seo_counts' );
+	delete_option( 'b61_toolkit_connection' );
+	delete_option( 'b61_analytics_status' );
+	foreach ( array( '7d', '30d', '90d' ) as $b61_range ) {
+		delete_option( 'b61_analytics_last_' . $b61_range );
+		delete_transient( 'b61_analytics_' . $b61_range );
+	}
 	// Redirects (b61_seo_redirects) and per-page SEO fields are kept: removing
 	// them would break old links and lose written descriptions.
 	// Media folders (terms) stay, like other content.

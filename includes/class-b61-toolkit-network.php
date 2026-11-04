@@ -1,7 +1,9 @@
 <?php
 /**
  * Multisite support: a Network Admin screen with network-wide settings (the
- * shared OpenAI key, the SMTP connection for Email, the Ask AI token) and a read-only overview of which features each site has on.
+ * shared OpenAI key, the SMTP connection for Email, the site token that
+ * connects Ask AI and Analytics to Base Camp) and a read-only overview of
+ * which features each site has on, with each site's Analytics status.
  *
  * Only loaded on multisite. Per-site feature switches stay on each site's own
  * B61 Toolkit → Features screen.
@@ -35,6 +37,9 @@ class B61_Toolkit_Network {
 			array_merge(
 				array(
 					'openai_api_key' => '',
+					'site_token'     => '',
+					'basecamp_url'   => '',
+					// Older names, still read by B61_Connection as a fallback.
 					'ask_ai_token'   => '',
 					'ask_ai_url'     => '',
 				),
@@ -78,8 +83,8 @@ class B61_Toolkit_Network {
 			$settings['openai_api_key'] = trim( sanitize_text_field( $input['openai_api_key'] ) );
 		}
 
-		if ( class_exists( 'B61_Module_Ask_AI' ) ) {
-			$settings = B61_Module_Ask_AI::sanitize_network( $input, $settings );
+		if ( class_exists( 'B61_Connection' ) ) {
+			$settings = B61_Connection::sanitize_network( $input, $settings );
 		}
 
 		$errors = array();
@@ -144,8 +149,8 @@ class B61_Toolkit_Network {
 						<?php B61_Email_SMTP::render_fields( self::OPTION, 'network', $settings ); ?>
 					</table>
 				<?php endif; ?>
-				<?php if ( class_exists( 'B61_Module_Ask_AI' ) ) : ?>
-					<?php B61_Module_Ask_AI::render_network_fields( self::OPTION, $settings ); ?>
+				<?php if ( class_exists( 'B61_Connection' ) ) : ?>
+					<?php B61_Connection::render_network_fields( self::OPTION, $settings ); ?>
 				<?php endif; ?>
 				<?php submit_button( __( 'Save Network Settings', 'b61-toolkit' ) ); ?>
 			</form>
@@ -160,6 +165,9 @@ class B61_Toolkit_Network {
 						<?php foreach ( $modules as $module ) : ?>
 							<th><?php echo esc_html( $module->label() ); ?></th>
 						<?php endforeach; ?>
+						<?php if ( class_exists( 'B61_Module_Analytics' ) ) : ?>
+							<th><?php esc_html_e( 'Analytics connection', 'b61-toolkit' ); ?></th>
+						<?php endif; ?>
 					</tr>
 				</thead>
 				<tbody>
@@ -177,6 +185,18 @@ class B61_Toolkit_Network {
 						<?php foreach ( $modules as $id => $module ) : ?>
 							<td><?php echo ( isset( $state[ $id ] ) && '1' === (string) $state[ $id ] ) ? '<span class="dashicons dashicons-yes" style="color:#008a20;" aria-label="' . esc_attr__( 'On', 'b61-toolkit' ) . '"></span>' : '<span aria-label="' . esc_attr__( 'Off', 'b61-toolkit' ) . '">—</span>'; ?></td>
 						<?php endforeach; ?>
+						<?php if ( class_exists( 'B61_Module_Analytics' ) ) : ?>
+							<td>
+								<?php
+								// Read-only: from the site's last analytics answer. Connecting happens in Base Camp.
+								if ( isset( $state['analytics'] ) && '1' === (string) $state['analytics'] ) {
+									echo esc_html( B61_Module_Analytics::network_label( $site_id ) );
+								} else {
+									echo '<span aria-label="' . esc_attr__( 'Analytics is off', 'b61-toolkit' ) . '">—</span>';
+								}
+								?>
+							</td>
+						<?php endif; ?>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>
