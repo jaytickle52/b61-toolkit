@@ -178,7 +178,7 @@ class B61_Module_Analytics extends B61_Toolkit_Module {
 		}
 	}
 
-	/** A site's last known state: connected | not_connected | attention | '' (never checked). */
+	/** A site's last known state: connected | not_connected | attention | '' (not checked yet). */
 	public static function status_for_site( $site_id = 0 ) {
 		$s = $site_id && is_multisite() ? get_blog_option( $site_id, self::STATUS_OPTION ) : get_option( self::STATUS_OPTION );
 		return is_array( $s ) && isset( $s['state'] ) ? (string) $s['state'] : '';
@@ -289,8 +289,11 @@ class B61_Module_Analytics extends B61_Toolkit_Module {
 				return __( 'Connected', 'b61-toolkit' );
 			case 'attention':
 				return __( 'Needs attention', 'b61-toolkit' );
-			default:
+			case 'not_connected':
 				return __( 'Not connected', 'b61-toolkit' );
+			default:
+				// Nobody has opened the dashboard or the page since it was switched on.
+				return __( 'Not checked yet', 'b61-toolkit' );
 		}
 	}
 }

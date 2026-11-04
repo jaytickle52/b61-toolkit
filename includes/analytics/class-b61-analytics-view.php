@@ -344,9 +344,22 @@ class B61_Analytics_View {
 		return $total > 0 ? number_format_i18n( round( $part / $total * 100 ) ) . '%' : '0%';
 	}
 
+	/**
+	 * GA's path for this site's own address: on a site in a sub-folder
+	 * ("/middle"), GA's "/middle/about/" is home_url( "/about/" ).
+	 */
+	public static function local_path( $path ) {
+		$base = untrailingslashit( (string) wp_parse_url( home_url(), PHP_URL_PATH ) );
+		if ( '' !== $base && ( $path === $base || 0 === strpos( $path, $base . '/' ) ) ) {
+			$rest = substr( $path, strlen( $base ) );
+			return '' === $rest ? '/' : $rest;
+		}
+		return $path;
+	}
+
 	/** A link to the page on this site (built from home_url only), plus an edit link when it's a post here. */
 	private static function page_links( $path, $title ) {
-		$url  = home_url( $path );
+		$url  = home_url( self::local_path( $path ) );
 		$html = '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( '' !== $title ? $title : $path ) . '<span class="screen-reader-text"> ' . esc_html__( '(opens in a new tab)', 'b61-toolkit' ) . '</span></a>';
 		$id   = url_to_postid( $url );
 		if ( $id && current_user_can( 'edit_post', $id ) ) {

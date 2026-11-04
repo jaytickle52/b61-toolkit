@@ -339,6 +339,14 @@ add_filter(
 );
 b61_t( 'Booked a tour' === B61_Analytics_View::event_label( 'schedule_tour_click' ), 'b61_analytics_event_labels names custom events' );
 remove_filter( 'b61_analytics_event_labels', $lab );
+// A site in a sub-folder: GA's path includes the folder, home_url() already has it.
+$home_filter = static function () {
+	return 'https://example.org/middle';
+};
+add_filter( 'home_url', $home_filter );
+b61_t( '/about/' === B61_Analytics_View::local_path( '/middle/about/' ) && '/' === B61_Analytics_View::local_path( '/middle' ) && '/middleton/' === B61_Analytics_View::local_path( '/middleton/' ), 'sub-folder sites: GA paths map onto this site\'s address' );
+remove_filter( 'home_url', $home_filter );
+b61_t( '/about/' === B61_Analytics_View::local_path( '/about/' ), 'sites at the root keep the path as it is' );
 b61_t( '45s' === B61_Analytics_View::duration( 45 ) && '1m 14s' === B61_Analytics_View::duration( 74 ) && '1h 2m' === B61_Analytics_View::duration( 3720 ), 'durations' );
 
 // ── Who can see it ─────────────────────────────────────────────────────
@@ -415,6 +423,8 @@ if ( is_multisite() ) {
 	( new B61_Toolkit_Network( b61_toolkit() ) )->render();
 	$net = ob_get_clean();
 	b61_t( false !== strpos( $net, 'Analytics connection' ) && false !== strpos( $net, 'Needs attention' ), 'the network screen shows each site\'s analytics status' );
+	delete_option( 'b61_analytics_status' );
+	b61_t( 'Not checked yet' === B61_Module_Analytics::network_label( get_current_blog_id() ), 'a site nobody has opened yet: Not checked yet' );
 	b61_t( 'Connected' === ( update_option( 'b61_analytics_status', array( 'state' => 'connected', 'message' => '', 'at' => time() ), false ) ? B61_Module_Analytics::network_label( get_current_blog_id() ) : '' ), 'Connected' );
 	b61_t( false === strpos( $net, 'name="' . B61_Toolkit_Network::OPTION . '[analytics' ), 'it\'s read-only (no analytics fields to change)' );
 }

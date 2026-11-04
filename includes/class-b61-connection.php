@@ -209,16 +209,14 @@ class B61_Connection {
 	public static function render_network_fields( $option, $settings ) {
 		$has = '' !== self::network_value( 'site_token' );
 		?>
-		<?php /* translators: %s: agency name */ ?>
-		<h2><?php echo esc_html( sprintf( __( 'Connect to %s', 'b61-toolkit' ), B61_Toolkit::brand( 'author' ) ) ); ?></h2>
+		<h2><?php /* translators: %s: agency name */ echo esc_html( sprintf( __( 'Connect to %s', 'b61-toolkit' ), B61_Toolkit::brand( 'author' ) ) ); ?></h2>
 		<p class="description"><?php esc_html_e( 'Used by every site that has Ask AI or Analytics switched on, unless the site sets its own token. Register the network in Base Camp as a multisite network so its subsites share the token.', 'b61-toolkit' ); ?></p>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="b61-net-site-token"><?php esc_html_e( 'Site token', 'b61-toolkit' ); ?></label></th>
 				<td>
 					<?php if ( '' !== self::token_constant() ) : ?>
-						<?php /* translators: %s: constant name */ ?>
-						<p><?php echo esc_html( sprintf( __( 'Set in wp-config.php (%s), which overrides this field.', 'b61-toolkit' ), self::token_constant() ) ); ?></p>
+						<p><?php /* translators: %s: constant name */ echo esc_html( sprintf( __( 'Set in wp-config.php (%s), which overrides this field.', 'b61-toolkit' ), self::token_constant() ) ); ?></p>
 					<?php else : ?>
 						<input type="password" id="b61-net-site-token" name="<?php echo esc_attr( $option ); ?>[site_token]" value="" class="regular-text" autocomplete="new-password"
 							placeholder="<?php echo esc_attr( $has ? __( 'Saved — leave blank to keep', 'b61-toolkit' ) : '' ); ?>" />
@@ -281,10 +279,8 @@ class B61_Connection {
 		$brand = B61_Toolkit::brand( 'author' );
 		?>
 		<div class="wrap b61-admin">
-			<?php /* translators: %s: agency name */ ?>
-			<h1><?php echo esc_html( sprintf( __( 'Connect to %s', 'b61-toolkit' ), $brand ) ); ?></h1>
-			<?php /* translators: %s: agency name */ ?>
-			<p><?php echo esc_html( sprintf( __( 'One connection for every feature that %s runs for this site: Ask AI and Analytics. The site only holds its token; the keys for Claude and Google Analytics stay with %s.', 'b61-toolkit' ), $brand, $brand ) ); ?></p>
+			<h1><?php /* translators: %s: agency name */ echo esc_html( sprintf( __( 'Connect to %s', 'b61-toolkit' ), $brand ) ); ?></h1>
+			<p><?php /* translators: %1$s: agency name */ echo esc_html( sprintf( __( 'One connection for every feature that %1$s runs for this site: Ask AI and Analytics. The site only holds its token; the keys for Claude and Google Analytics stay with %1$s.', 'b61-toolkit' ), $brand ) ); ?></p>
 
 			<?php if ( is_array( $notice ) ) : ?>
 				<div class="notice notice-<?php echo esc_attr( $notice['ok'] ? 'success' : 'error' ); ?>"><p><?php echo esc_html( $notice['message'] ); ?></p></div>
@@ -297,8 +293,7 @@ class B61_Connection {
 						<th scope="row"><label for="b61-site-token"><?php esc_html_e( 'Site token', 'b61-toolkit' ); ?></label></th>
 						<td>
 							<?php if ( 'constant' === $source ) : ?>
-								<?php /* translators: %s: constant name */ ?>
-								<p><?php echo esc_html( sprintf( __( 'Set in wp-config.php (%s).', 'b61-toolkit' ), self::token_constant() ) ); ?></p>
+								<p><?php /* translators: %s: constant name */ echo esc_html( sprintf( __( 'Set in wp-config.php (%s).', 'b61-toolkit' ), self::token_constant() ) ); ?></p>
 							<?php else : ?>
 								<input type="password" id="b61-site-token" name="<?php echo esc_attr( self::OPTION ); ?>[token]" value="" class="regular-text" autocomplete="new-password"
 									placeholder="<?php echo esc_attr( '' !== $opts['token'] ? __( 'Saved — leave blank to keep', 'b61-toolkit' ) : '' ); ?>" />

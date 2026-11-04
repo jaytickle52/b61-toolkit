@@ -162,8 +162,7 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 					esc_html_e( 'This site has no site token yet, so the Ask button is hidden.', 'b61-toolkit' );
 				}
 				?>
-				<?php /* translators: %s: screen name */ ?>
-				<a href="<?php echo esc_url( $connect ); ?>"><?php echo esc_html( sprintf( __( 'Token and Test connection: %s →', 'b61-toolkit' ), $connect_label ) ); ?></a>
+				<a href="<?php /* translators: %s: screen name */ echo esc_url( $connect ); ?>"><?php echo esc_html( sprintf( __( 'Token and Test connection: %s →', 'b61-toolkit' ), $connect_label ) ); ?></a>
 			</p>
 		</div>
 		<?php
