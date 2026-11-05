@@ -169,12 +169,12 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 
 		// Put the new file in place first; only then clear out the old copies,
 		// so a failed move never leaves the attachment without a file.
-		if ( ! @rename( $upload['file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.rename_rename -- same-directory move inside uploads, as core's own upload handling does.
+		$fs = self::filesystem();
+		if ( ! $fs->move( $upload['file'], $target, true ) ) {
 			wp_delete_file( $upload['file'] );
 			return new WP_Error( 'b61_replace_move', __( 'The new file could not be saved in place of the old one.', 'b61-toolkit' ) );
 		}
-		$perms = fileperms( dirname( $target ) ) & 0000666;
-		@chmod( $target, $perms ); // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- same permissions core gives uploads.
+		$fs->chmod( $target, fileperms( dirname( $target ) ) & 0000666 );
 
 		// Remove the old scaled copy and every generated size.
 		$old = array( $old_file );
@@ -206,7 +206,7 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 		// …and a "-scaled" URL must keep working when the new image is small
 		// enough not to need scaling: serve the new file under the old name.
 		if ( $was_scaled && get_attached_file( $attachment_id ) !== $old_file && is_array( $new_meta ) ) {
-			if ( @copy( $target, $old_file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors,WordPress.WP.AlternativeFunctions.file_system_operations_copy -- same directory inside uploads.
+			if ( $fs->copy( $target, $old_file, true ) ) {
 				update_attached_file( $attachment_id, $old_file );
 				$new_meta['file']           = _wp_relative_upload_path( $old_file );
 				$new_meta['original_image'] = wp_basename( $target );
@@ -225,6 +225,17 @@ class B61_Module_Replace_Media extends B61_Toolkit_Module {
 
 		do_action( 'b61_media_replaced', $attachment_id );
 		return true;
+	}
+
+	/**
+	 * WordPress's direct filesystem class. wp_handle_upload() has just written
+	 * to this uploads folder, so direct access is known to work there — using
+	 * WP_Filesystem() instead could stop to ask for FTP details on some hosts.
+	 */
+	private static function filesystem() {
+		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+		return new WP_Filesystem_Direct( null );
 	}
 
 	public function notice() {
