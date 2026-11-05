@@ -16,13 +16,10 @@
  * Guides only: nothing here changes the site. Questions and answers are not
  * stored in WordPress (the browser keeps them for the session).
  *
- * Settings: B61 Toolkit → Ask AI, or wp-config.php —
- *
- *   define( 'B61_ASK_AI_TOKEN', '…' );   // the site token from Base Camp
- *   define( 'B61_ASK_AI_URL', 'https://…' ); // only to use another Base Camp
- *
- * On multisite the token and address are network settings (Network Admin →
- * B61 Toolkit) with an optional per-site override.
+ * The token and Base Camp's address are the site's shared connection
+ * (B61_Connection: B61 Toolkit → Connect to Banner 61, or B61_SITE_TOKEN /
+ * B61_BASECAMP_URL in wp-config.php). The older B61_ASK_AI_TOKEN /
+ * B61_ASK_AI_URL constants and saved Ask AI settings still work.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -35,8 +32,7 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 
 	const OPTION      = 'b61_toolkit_ask_ai';
 	const PAGE_SLUG   = 'b61-toolkit-ask-ai';
-	const DEFAULT_URL = 'https://mild-guineapig-470.convex.site';
-	const TEST_ACTION = 'b61_ask_ai_test';
+	const DEFAULT_URL = B61_Connection::DEFAULT_URL;
 
 	/** Questions per person per window. */
 	const RATE_MAX    = 20;
@@ -74,10 +70,8 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 	}
 
 	public function init() {
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
-		add_filter( 'option_page_capability_' . self::OPTION . '_group', array( $this, 'settings_capability' ) );
+		B61_Connection::boot();
 		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
-		add_action( 'admin_post_' . self::TEST_ACTION, array( $this, 'test_connection' ) );
 		if ( ! self::configured() ) {
 			return;
 		}
@@ -97,81 +91,31 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 		return b61_toolkit()->capability();
 	}
 
+	/** The saved token and address (the shared connection's). */
 	public static function options() {
-		return wp_parse_args(
-			(array) get_option( self::OPTION, array() ),
-			array(
-				'url'   => '',
-				'token' => '',
-			)
-		);
+		return B61_Connection::options();
 	}
 
-	private static function network_settings() {
-		if ( ! is_multisite() || ! class_exists( 'B61_Toolkit_Network' ) ) {
-			return array();
-		}
-		return B61_Toolkit_Network::settings();
-	}
-
-	/**
-	 * Where the token comes from: constant (wp-config.php), site (this
-	 * site's override), network (Network Admin), or '' (none).
-	 */
+	/** Where the token comes from: constant, site, network, or '' (none). */
 	public static function token_source() {
-		if ( defined( 'B61_ASK_AI_TOKEN' ) && '' !== trim( (string) B61_ASK_AI_TOKEN ) ) {
-			return 'constant';
-		}
-		if ( '' !== trim( (string) self::options()['token'] ) ) {
-			return 'site';
-		}
-		$net = self::network_settings();
-		if ( ! empty( $net['ask_ai_token'] ) ) {
-			return 'network';
-		}
-		return '';
+		return B61_Connection::token_source();
 	}
 
 	/** The site token. Never output this. */
 	public static function token() {
-		switch ( self::token_source() ) {
-			case 'constant':
-				return trim( (string) B61_ASK_AI_TOKEN );
-			case 'site':
-				return trim( (string) self::options()['token'] );
-			case 'network':
-				return trim( (string) self::network_settings()['ask_ai_token'] );
-		}
-		return '';
+		return B61_Connection::token();
 	}
 
-	/** Base Camp's address: constant, this site, the network, then the default. */
 	public static function endpoint() {
-		if ( defined( 'B61_ASK_AI_URL' ) && 0 === stripos( trim( (string) B61_ASK_AI_URL ), 'https://' ) ) {
-			return untrailingslashit( trim( (string) B61_ASK_AI_URL ) );
-		}
-		$site = trim( (string) self::options()['url'] );
-		if ( '' !== $site ) {
-			return untrailingslashit( $site );
-		}
-		$net = self::network_settings();
-		if ( ! empty( $net['ask_ai_url'] ) ) {
-			return untrailingslashit( (string) $net['ask_ai_url'] );
-		}
-		return self::DEFAULT_URL;
+		return B61_Connection::endpoint();
 	}
 
 	public static function configured() {
-		return '' !== self::token();
+		return B61_Connection::configured();
 	}
 
-	/**
-	 * This site's address as registered in Base Camp: the Site Address
-	 * option itself, not home_url(), which translation plugins filter
-	 * (language prefixes would not match).
-	 */
 	public static function site_url() {
-		return untrailingslashit( (string) get_option( 'home' ) );
+		return B61_Connection::site_url();
 	}
 
 	/** A stable, salted id for this person on this site (not reversible). */
@@ -179,179 +123,49 @@ class B61_Module_Ask_AI extends B61_Toolkit_Module {
 		return hash_hmac( 'sha256', 'b61-ask-ai|' . (int) $user_id, wp_salt( 'auth' ) );
 	}
 
-	public function register_settings() {
-		register_setting(
-			self::OPTION . '_group',
-			self::OPTION,
-			array( 'sanitize_callback' => array( $this, 'sanitize' ) )
-		);
-	}
-
+	/** Kept for older callers: the connection's own sanitizer. */
 	public function sanitize( $input ) {
-		$input = (array) $input;
-		$now   = self::options();
-		$out   = array(
-			'url'   => isset( $input['url'] ) ? esc_url_raw( trim( (string) $input['url'] ), array( 'https' ) ) : $now['url'],
-			'token' => $now['token'],
-		);
-		if ( ! empty( $input['clear_token'] ) ) {
-			$out['token'] = '';
-		} elseif ( isset( $input['token'] ) && '' !== trim( (string) $input['token'] ) ) {
-			// Blank keeps the saved token; it's never echoed back into the form.
-			$out['token'] = preg_replace( '/[^A-Za-z0-9_\-]/', '', (string) $input['token'] );
-		}
-		return $out;
+		return B61_Connection::sanitize( $input );
 	}
 
 	public function register_admin_page() {
 		add_submenu_page( B61_Toolkit::MENU_SLUG, __( 'Ask AI', 'b61-toolkit' ), __( 'Ask AI', 'b61-toolkit' ), $this->settings_capability(), self::PAGE_SLUG, array( $this, 'render_settings' ) );
 	}
 
-	/** Network Admin → B61 Toolkit fields (called by B61_Toolkit_Network). */
+	/** Network fields now belong to the shared connection. */
 	public static function render_network_fields( $option, $settings ) {
-		$has = ! empty( $settings['ask_ai_token'] );
-		?>
-		<h2><?php esc_html_e( 'Ask AI', 'b61-toolkit' ); ?></h2>
-		<p class="description"><?php esc_html_e( 'Used by every site that has Ask AI switched on, unless the site sets its own token. Register the network in Base Camp as a multisite network so its subsites share the token.', 'b61-toolkit' ); ?></p>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row"><label for="b61-net-ask-token"><?php esc_html_e( 'Site token', 'b61-toolkit' ); ?></label></th>
-				<td>
-					<?php if ( defined( 'B61_ASK_AI_TOKEN' ) && '' !== (string) B61_ASK_AI_TOKEN ) : ?>
-						<p><?php esc_html_e( 'Set in wp-config.php (B61_ASK_AI_TOKEN), which overrides this field.', 'b61-toolkit' ); ?></p>
-					<?php else : ?>
-						<input type="password" id="b61-net-ask-token" name="<?php echo esc_attr( $option ); ?>[ask_ai_token]" value="" class="regular-text" autocomplete="new-password"
-							placeholder="<?php echo esc_attr( $has ? __( 'Saved — leave blank to keep', 'b61-toolkit' ) : '' ); ?>" />
-						<?php if ( $has ) : ?>
-							<label style="margin-left:1em;"><input type="checkbox" name="<?php echo esc_attr( $option ); ?>[clear_ask_ai_token]" value="1" /> <?php esc_html_e( 'Remove saved token', 'b61-toolkit' ); ?></label>
-						<?php endif; ?>
-					<?php endif; ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="b61-net-ask-url"><?php esc_html_e( 'Base Camp address', 'b61-toolkit' ); ?></label></th>
-				<td>
-					<input type="url" id="b61-net-ask-url" name="<?php echo esc_attr( $option ); ?>[ask_ai_url]" value="<?php echo esc_attr( (string) ( $settings['ask_ai_url'] ?? '' ) ); ?>" class="regular-text" placeholder="<?php echo esc_attr( self::DEFAULT_URL ); ?>" />
-					<p class="description"><?php esc_html_e( 'Leave blank for the default.', 'b61-toolkit' ); ?></p>
-				</td>
-			</tr>
-		</table>
-		<?php
+		B61_Connection::render_network_fields( $option, $settings );
 	}
 
-	/** Merge the network form's Ask AI fields into the network settings. */
 	public static function sanitize_network( $input, $settings ) {
-		$input = (array) $input;
-		if ( ! empty( $input['clear_ask_ai_token'] ) ) {
-			$settings['ask_ai_token'] = '';
-		} elseif ( isset( $input['ask_ai_token'] ) && '' !== trim( (string) $input['ask_ai_token'] ) ) {
-			$settings['ask_ai_token'] = preg_replace( '/[^A-Za-z0-9_\-]/', '', (string) $input['ask_ai_token'] );
-		}
-		if ( isset( $input['ask_ai_url'] ) ) {
-			$settings['ask_ai_url'] = esc_url_raw( trim( (string) $input['ask_ai_url'] ), array( 'https' ) );
-		}
-		return $settings;
+		return B61_Connection::sanitize_network( $input, $settings );
 	}
 
 	public function render_settings() {
 		if ( ! current_user_can( $this->settings_capability() ) ) {
 			return;
 		}
-		$opts   = self::options();
-		$source = self::token_source();
-		$notice = get_transient( 'b61_ask_ai_test_' . get_current_user_id() );
-		if ( $notice ) {
-			delete_transient( 'b61_ask_ai_test_' . get_current_user_id() );
-		}
+		$connect = admin_url( 'admin.php?page=' . B61_Connection::PAGE_SLUG );
+		/* translators: %s: agency name */
+		$connect_label = sprintf( __( 'Connect to %s', 'b61-toolkit' ), B61_Toolkit::brand( 'author' ) );
 		?>
 		<div class="wrap b61-admin">
 			<h1><?php esc_html_e( 'Ask AI', 'b61-toolkit' ); ?></h1>
 			<p><?php esc_html_e( 'Adds an "Ask" button to the admin bar (and to the Breakdance editor) for Editors and Administrators. It answers questions about this website with steps, links to the right screen and the guide that covers it. It never changes anything.', 'b61-toolkit' ); ?></p>
 			<p class="description"><?php esc_html_e( 'With each question it sends a short summary of the site: its name and address, theme and page builder, active plugins, which Toolkit features are on, the screen you\'re on, your role, menu names and page counts. While answering it can look up pages, menus, Toolkit settings (never keys or passwords), the SEO Report, plugins and form settings. It never sees form entries, passwords or the list of users.', 'b61-toolkit' ); ?></p>
-
-			<?php if ( is_array( $notice ) ) : ?>
-				<div class="notice notice-<?php echo esc_attr( $notice['ok'] ? 'success' : 'error' ); ?>"><p><?php echo esc_html( $notice['message'] ); ?></p></div>
-			<?php endif; ?>
-
-			<form method="post" action="options.php">
-				<?php settings_fields( self::OPTION . '_group' ); ?>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row"><label for="b61-ask-token"><?php esc_html_e( 'Site token', 'b61-toolkit' ); ?></label></th>
-						<td>
-							<?php if ( 'constant' === $source ) : ?>
-								<p><?php esc_html_e( 'Set in wp-config.php (B61_ASK_AI_TOKEN).', 'b61-toolkit' ); ?></p>
-							<?php else : ?>
-								<input type="password" id="b61-ask-token" name="<?php echo esc_attr( self::OPTION ); ?>[token]" value="" class="regular-text" autocomplete="new-password"
-									placeholder="<?php echo esc_attr( '' !== $opts['token'] ? __( 'Saved — leave blank to keep', 'b61-toolkit' ) : '' ); ?>" />
-								<?php if ( '' !== $opts['token'] ) : ?>
-									<label style="margin-left:1em;"><input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[clear_token]" value="1" /> <?php esc_html_e( 'Remove saved token', 'b61-toolkit' ); ?></label>
-								<?php endif; ?>
-								<p class="description">
-									<?php
-									if ( 'network' === $source ) {
-										esc_html_e( 'Using the network\'s token. Enter one here only to use a different token for this site.', 'b61-toolkit' );
-									} else {
-										/* translators: %s: agency name */
-										echo esc_html( sprintf( __( '%s gives you this token from Base Camp → Ask AI → Sites. Putting it in wp-config.php as B61_ASK_AI_TOKEN keeps it out of the database.', 'b61-toolkit' ), B61_Toolkit::brand( 'author' ) ) );
-									}
-									?>
-								</p>
-							<?php endif; ?>
-						</td>
-					</tr>
-					<?php if ( ! defined( 'B61_ASK_AI_URL' ) ) : ?>
-					<tr>
-						<th scope="row"><label for="b61-ask-url"><?php esc_html_e( 'Base Camp address', 'b61-toolkit' ); ?></label></th>
-						<td>
-							<input type="url" id="b61-ask-url" name="<?php echo esc_attr( self::OPTION ); ?>[url]" value="<?php echo esc_attr( $opts['url'] ); ?>" class="regular-text" placeholder="<?php echo esc_attr( self::endpoint() ); ?>" />
-							<p class="description"><?php esc_html_e( 'Leave blank for the default.', 'b61-toolkit' ); ?></p>
-						</td>
-					</tr>
-					<?php endif; ?>
-				</table>
-				<?php submit_button(); ?>
-			</form>
-
-			<h2><?php esc_html_e( 'Test connection', 'b61-toolkit' ); ?></h2>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>" />
-				<?php wp_nonce_field( self::TEST_ACTION ); ?>
-				<p><?php esc_html_e( 'Checks the token and this site\'s address with Base Camp.', 'b61-toolkit' ); ?></p>
-				<?php submit_button( __( 'Test connection', 'b61-toolkit' ), 'secondary', 'submit', false, self::configured() ? array() : array( 'disabled' => 'disabled' ) ); ?>
-			</form>
+			<h2><?php esc_html_e( 'Connection', 'b61-toolkit' ); ?></h2>
+			<p>
+				<?php
+				if ( self::configured() ) {
+					esc_html_e( 'This site has a site token, so the Ask button is on.', 'b61-toolkit' );
+				} else {
+					esc_html_e( 'This site has no site token yet, so the Ask button is hidden.', 'b61-toolkit' );
+				}
+				?>
+				<a href="<?php /* translators: %s: screen name */ echo esc_url( $connect ); ?>"><?php echo esc_html( sprintf( __( 'Token and Test connection: %s →', 'b61-toolkit' ), $connect_label ) ); ?></a>
+			</p>
 		</div>
 		<?php
-	}
-
-	public function test_connection() {
-		if ( ! current_user_can( $this->settings_capability() ) ) {
-			wp_die( esc_html__( 'You do not have permission to do that.', 'b61-toolkit' ), 403 );
-		}
-		check_admin_referer( self::TEST_ACTION );
-		$res = self::call( 'ping', array( 'site_url' => self::site_url() ) );
-		if ( 'ok' === ( $res['type'] ?? '' ) ) {
-			$used = isset( $res['used_this_month'] ) ? (int) $res['used_this_month'] : 0;
-			$max  = isset( $res['monthly_limit'] ) ? (int) $res['monthly_limit'] : 0;
-			$kind = 'tokens' === ( $res['limit_kind'] ?? '' ) ? __( 'tokens', 'b61-toolkit' ) : __( 'questions', 'b61-toolkit' );
-			/* translators: 1: site name in Base Camp, 2: used, 3: limit, 4: questions or tokens */
-			$msg = sprintf( __( 'Connected as "%1$s". This month: %2$s of %3$s %4$s.', 'b61-toolkit' ), (string) ( $res['site'] ?? '' ), number_format_i18n( $used ), $max ? number_format_i18n( $max ) : __( 'unlimited', 'b61-toolkit' ), $kind );
-			if ( empty( $res['ai_ready'] ) ) {
-				$msg .= ' ' . __( 'Base Camp has no Claude key yet, so questions will get a "not available" message.', 'b61-toolkit' );
-			}
-			$notice = array(
-				'ok'      => true,
-				'message' => $msg,
-			);
-		} else {
-			$notice = array(
-				'ok'      => false,
-				'message' => (string) ( $res['message'] ?? __( 'Couldn\'t connect.', 'b61-toolkit' ) ),
-			);
-		}
-		set_transient( 'b61_ask_ai_test_' . get_current_user_id(), $notice, 60 );
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
-		exit;
 	}
 
 	/* ------------------------------------------------------------------ */

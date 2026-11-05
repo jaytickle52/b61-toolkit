@@ -151,6 +151,7 @@ class B61_Toolkit {
 			new B61_Module_Featured_Image(),
 			new B61_Module_Alt_Text(),
 			new B61_Module_Ask_AI(),
+			new B61_Module_Analytics(),
 			new B61_Module_Balanced_Headlines(),
 			new B61_Module_Paragraph_Orphans(),
 		);

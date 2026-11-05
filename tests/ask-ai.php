@@ -32,6 +32,9 @@ $saved_modules      = $modules;
 $saved_email        = get_option( 'b61_toolkit_email' );
 $saved_alt          = get_option( 'banner_ai_alt_text_options' );
 $saved_ask          = get_option( 'b61_toolkit_ask_ai' );
+// The shared connection wins over Ask AI's older option: set it aside here.
+$saved_conn         = get_option( 'b61_toolkit_connection' );
+delete_option( 'b61_toolkit_connection' );
 $modules['ask_ai']  = '1';
 $modules['seo']     = '1';
 $modules['email']   = '1';
@@ -309,7 +312,7 @@ foreach ( array( $admin_id, $editor_id, $author_id, $sub_id ) as $uid ) {
 	}
 }
 update_option( B61_Toolkit::MODULES_OPTION, $saved_modules );
-foreach ( array( 'b61_toolkit_email' => $saved_email, 'banner_ai_alt_text_options' => $saved_alt, 'b61_toolkit_ask_ai' => $saved_ask ) as $opt => $was ) {
+foreach ( array( 'b61_toolkit_email' => $saved_email, 'banner_ai_alt_text_options' => $saved_alt, 'b61_toolkit_ask_ai' => $saved_ask, 'b61_toolkit_connection' => $saved_conn ) as $opt => $was ) {
 	if ( false === $was ) {
 		delete_option( $opt );
 	} else {
